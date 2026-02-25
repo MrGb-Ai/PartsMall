@@ -293,14 +293,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, setUsers, activeDatabaseI
                 )}
             </motion.div>
             
-            <motion.p 
+            <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 }}
                 className="mt-8 text-center text-slate-500/80 text-xs font-bold drop-shadow-sm"
             >
-                © {new Date().getFullYear()} جميع الحقوق محفوظة لـ ProDev Solutions
-            </motion.p>
+                <p>© {new Date().getFullYear()} جميع الحقوق محفوظة لـ ProDev Solutions</p>
+                <p className="mt-2 text-emerald-600/80">نحن نعمل دائماً لخدمتكم</p>
+            </motion.div>
         </div>
         <Chat currentUser={guestUser} departments={[]} chatMessages={chatMessages} setChatMessages={setChatMessages} isSupportMode={true} />
     </div>
