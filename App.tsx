@@ -12,34 +12,34 @@ import AnalysisReport from './components/AnalysisReport';
 import BackupSettings from './components/BackupSettings';
 import CloudSettings from './components/CloudSettings';
 import CompanySettings from './components/CompanySettings';
-import CustomerManager from './components/CustomerManager';
-import CustomerReceiptManager from './components/CustomerReceiptManager';
+import CustomerManagement from './components/CustomerManagement';
+import CustomerReceiptManagement from './components/CustomerReceiptManagement';
 import CustomerStatement from './components/CustomerStatement';
 import CustomerMovementComparison from './components/CustomerMovementComparison';
 import DailyLedger from './components/DailyLedger';
 import DefaultValuesComponent from './components/DefaultValues';
 import DiscountManagement from './components/DiscountManagement';
 import ExpenseCategoryManagement from './components/ExpenseCategoryManagement';
-import ExpenseManager from './components/ExpenseManager';
+import ExpenseManagement from './components/ExpenseManagement';
 import ExpenseReport from './components/ExpenseReport';
 import FactoryReset from './components/FactoryReset';
 import IncomeStatement from './components/IncomeStatement';
 import WeeklyReport from './components/WeeklyReport';
-import ItemManager from './components/ItemManager';
+import ItemManagement from './components/ItemManagement';
 import ItemMovement from './components/ItemMovement';
 import ItemSearch from './components/ItemSearch';
 import ItemsInWarehouses from './components/ItemsInWarehouses';
-import PurchaseInvoiceManager from './components/PurchaseInvoiceManager';
+import PurchaseInvoiceManagement from './components/PurchaseInvoiceManagement';
 import PurchaseReport from './components/PurchaseReport';
-import PurchaseReturnManager from './components/PurchaseReturnManager';
-import SalesInvoiceManager from './components/SalesInvoiceManager';
+import PurchaseReturnManagement from './components/PurchaseReturnManagement';
+import SalesInvoiceManagement from './components/SalesInvoiceManagement';
 import SalesReport from './components/SalesReport';
 import SalesRepresentativeManagement from './components/SalesRepresentativeManagement';
 import SalesRepStatement from './components/SalesRepStatement';
-import SalesReturnManager from './components/SalesReturnManager';
+import SalesReturnManagement from './components/SalesReturnManagement';
 import SettingsActivation from './components/SettingsActivation';
-import SupplierManager from './components/SupplierManager';
-import SupplierPaymentManager from './components/SupplierPaymentManager';
+import SupplierManagement from './components/SupplierManagement';
+import SupplierPaymentManagement from './components/SupplierPaymentManagement';
 import SupplierStatement from './components/SupplierStatement';
 import TreasuryManagement from './components/TreasuryManagement';
 import TreasuryTransferManagement from './components/TreasuryTransferManagement';
@@ -309,21 +309,6 @@ const App: React.FC = () => {
   const handleLogin = (user: MgmtUser) => {
     setCurrentUser(user);
     setIsLoggedIn(true);
-    
-    // Log login transaction
-    const loginMessage: ChatMessage = {
-        id: Date.now().toString(),
-        channelId: 'transactions',
-        senderId: user.id,
-        senderName: user.fullName,
-        text: `قام المستخدم ${user.fullName} بتسجيل الدخول في ${new Date().toLocaleDateString('ar-EG')} الساعة ${new Date().toLocaleTimeString('ar-EG')}`,
-        timestamp: Date.now(),
-    };
-    setChatMessages(prev => {
-        const safePrev = Array.isArray(prev) ? prev : [];
-        return [...safePrev, loginMessage];
-    });
-
     if (!isSetupComplete) {
       setCurrentView('initialSetup');
     } else {
@@ -378,7 +363,7 @@ const App: React.FC = () => {
       case 'userManagement': return <UserManagement users={users} setUsers={setUsers} showNotification={showNotification} currentUser={currentUser!} employees={employees} />;
       case 'userPermissions': return <UserPermissions users={users} setUsers={setUsers} showNotification={showNotification} />;
       case 'companySettings': return <CompanySettings companyData={companyData} setCompanyData={setCompanyData} showNotification={showNotification} />;
-      case 'departmentManagement': return <DepartmentManagement currentUser={currentUser!} />;
+      case 'departmentManagement': return <DepartmentManagement />;
       case 'cloudSettings': return <CloudSettings firebaseConfig={firebaseConfig} setFirebaseConfig={setFirebaseConfig} showNotification={showNotification} />;
       case 'defaultValues': return <DefaultValuesComponent defaultValues={defaultValues} setDefaultValues={setDefaultValues} warehouses={warehouses} units={units} salesRepresentatives={salesRepresentatives} treasuries={treasuries} showNotification={showNotification} />;
       case 'backupSettings': return <BackupSettings appData={{users, companyData, warehouses, units, items, treasuries, expenseCategories, expenses, customers, customerReceipts, salesRepresentatives, suppliers, supplierPayments, salesInvoices, salesReturns, purchaseInvoices, purchaseReturns, warehouseTransfers, treasuryTransfers, defaultValues, activeDiscounts, selectedDiscountItems, importCalculatorHistory}} onRestore={handleRestoreAppData} showNotification={showNotification} databases={databases} setDatabases={setDatabases} activeDatabaseId={activeDatabaseId} setActiveDatabaseId={activeDatabaseIdSet} allDataKeys={[]} />;
@@ -387,19 +372,19 @@ const App: React.FC = () => {
       case 'updateManagement': return <UpdateManagement licenseStatus={licenseStatus} latestVersion={latestVersion} downloadUrl={downloadUrl} releaseNotes={releaseNotes} />;
       case 'warehouseManagement': return <WarehouseManagement warehouses={warehouses} setWarehouses={setWarehouses} items={items} setItems={setItems} showNotification={showNotification} currentUser={currentUser!} employees={employees} />;
       case 'unitManagement': return <UnitManagement units={units} setUnits={setUnits} items={items} setItems={setItems} showNotification={showNotification} currentUser={currentUser!} />;
-      case 'itemManagement': return <ItemManager items={items} setItems={setItems} units={units} warehouses={warehouses} showNotification={showNotification} currentUser={currentUser!} defaultValues={defaultValues} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} warehouseTransfers={warehouseTransfers} companyData={companyData} />;
+      case 'itemManagement': return <ItemManagement items={items} setItems={setItems} units={units} warehouses={warehouses} showNotification={showNotification} currentUser={currentUser!} defaultValues={defaultValues} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} warehouseTransfers={warehouseTransfers} companyData={companyData} />;
       case 'treasuryManagement': return <TreasuryManagement treasuries={treasuries} setTreasuries={setTreasuries} showNotification={showNotification} salesInvoices={salesInvoices} purchaseInvoices={purchaseInvoices} salesReturns={salesReturns} purchaseReturns={purchaseReturns} customerReceipts={customerReceipts} supplierPayments={supplierPayments} expenses={expenses} treasuryTransfers={treasuryTransfers} currentUser={currentUser!} defaultValues={defaultValues} employees={employees} />;
       case 'expenseCategoryManagement': return <ExpenseCategoryManagement expenseCategories={expenseCategories} setExpenseCategories={setExpenseCategories} showNotification={showNotification} currentUser={currentUser!} />;
-      case 'expenseManagement': return <ExpenseManager expenses={expenses} setExpenses={setExpenses} expenseCategories={expenseCategories} treasuries={treasuries} showNotification={showNotification} currentUser={currentUser!} defaultValues={defaultValues} customerReceipts={customerReceipts} supplierPayments={supplierPayments} treasuryTransfers={treasuryTransfers} salesInvoices={salesInvoices} purchaseInvoices={purchaseInvoices} salesReturns={salesReturns} purchaseReturns={purchaseReturns} draft={expenseDraft} setDraft={setExpenseDraft} isEditing={expenseIsEditing} setIsEditing={setExpenseIsEditing} />;
-      case 'customerManagement': return <CustomerManager customers={customers} setCustomers={setCustomers} showNotification={showNotification} currentUser={currentUser!} salesInvoices={salesInvoices} salesReturns={salesReturns} customerReceipts={customerReceipts} />;
-      case 'customerReceipt': return <CustomerReceiptManager customerReceipts={customerReceipts} setCustomerReceipts={setCustomerReceipts} customers={customers} treasuries={treasuries} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} defaultValues={defaultValues} companyData={companyData} supplierPayments={supplierPayments} expenses={expenses} treasuryTransfers={treasuryTransfers} draft={customerReceiptDraft} setDraft={setCustomerReceiptDraft} isEditing={customerReceiptIsEditing} setIsEditing={setCustomerReceiptIsEditing} />;
+      case 'expenseManagement': return <ExpenseManagement expenses={expenses} setExpenses={setExpenses} expenseCategories={expenseCategories} treasuries={treasuries} showNotification={showNotification} currentUser={currentUser!} defaultValues={defaultValues} customerReceipts={customerReceipts} supplierPayments={supplierPayments} treasuryTransfers={treasuryTransfers} salesInvoices={salesInvoices} purchaseInvoices={purchaseInvoices} salesReturns={salesReturns} purchaseReturns={purchaseReturns} draft={expenseDraft} setDraft={setExpenseDraft} isEditing={expenseIsEditing} setIsEditing={setExpenseIsEditing} />;
+      case 'customerManagement': return <CustomerManagement customers={customers} setCustomers={setCustomers} showNotification={showNotification} currentUser={currentUser!} salesInvoices={salesInvoices} salesReturns={salesReturns} customerReceipts={customerReceipts} />;
+      case 'customerReceipt': return <CustomerReceiptManagement customerReceipts={customerReceipts} setCustomerReceipts={setCustomerReceipts} customers={customers} treasuries={treasuries} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} defaultValues={defaultValues} companyData={companyData} supplierPayments={supplierPayments} expenses={expenses} treasuryTransfers={treasuryTransfers} draft={customerReceiptDraft} setDraft={setCustomerReceiptDraft} isEditing={customerReceiptIsEditing} setIsEditing={setCustomerReceiptIsEditing} />;
       case 'salesRepresentativeManagement': return <SalesRepresentativeManagement salesRepresentatives={salesRepresentatives} setSalesRepresentatives={setSalesRepresentatives} showNotification={showNotification} currentUser={currentUser!} salesInvoices={salesInvoices} salesReturns={salesReturns} employees={employees} />;
-      case 'supplierManagement': return <SupplierManager suppliers={suppliers} setSuppliers={setSuppliers} showNotification={showNotification} currentUser={currentUser!} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} supplierPayments={supplierPayments} />;
-      case 'supplierPayment': return <SupplierPaymentManager supplierPayments={supplierPayments} setSupplierPayments={setSupplierPayments} suppliers={suppliers} treasuries={treasuries} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} salesInvoices={salesInvoices} salesReturns={salesReturns} defaultValues={defaultValues} companyData={companyData} customerReceipts={customerReceipts} expenses={expenses} treasuryTransfers={treasuryTransfers} draft={supplierPaymentDraft} setDraft={setSupplierPaymentDraft} isEditing={supplierPaymentIsEditing} setIsEditing={setSupplierPaymentIsEditing} />;
-      case 'salesInvoice': return <SalesInvoiceManager salesInvoices={salesInvoices} setSalesInvoices={setSalesInvoices} heldInvoices={heldInvoices} setHeldInvoices={setHeldInvoices} salesReturns={salesReturns} customerReceipts={customerReceipts} items={items} setItems={setItems} customers={customers} setCustomers={setCustomers} salesRepresentatives={salesRepresentatives} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} activeDiscounts={activeDiscounts} draft={salesInvoiceDraft} setDraft={setSalesInvoiceDraft} isEditing={salesInvoiceIsEditing} setIsEditing={setSalesInvoiceIsEditing} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} />;
-      case 'salesReturn': return <SalesReturnManager salesReturns={salesReturns} setSalesReturns={setSalesReturns} salesInvoices={salesInvoices} customerReceipts={customerReceipts} items={items} setItems={setItems} customers={customers} salesRepresentatives={salesRepresentatives} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={salesReturnDraft} setDraft={setSalesReturnDraft} isEditing={salesReturnIsEditing} setIsEditing={setSalesReturnIsEditing} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} expenses={expenses} treasuryTransfers={treasuryTransfers} treasuries={treasuries} supplierPayments={supplierPayments} />;
-      case 'purchaseInvoice': return <PurchaseInvoiceManager purchaseInvoices={purchaseInvoices} setPurchaseInvoices={setPurchaseInvoices} heldPurchaseInvoices={heldPurchaseInvoices} setHeldPurchaseInvoices={setHeldPurchaseInvoices} purchaseReturns={purchaseReturns} supplierPayments={supplierPayments} items={items} setItems={setItems} suppliers={suppliers} setSuppliers={setSuppliers} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={purchaseInvoiceDraft} setDraft={setPurchaseInvoiceDraft} isEditing={purchaseInvoiceIsEditing} setIsEditing={setPurchaseInvoiceIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} expenses={expenses} customerReceipts={customerReceipts} treasuryTransfers={treasuryTransfers} treasuries={treasuries} />;
-      case 'purchaseReturn': return <PurchaseReturnManager purchaseReturns={purchaseReturns} setPurchaseReturns={setPurchaseReturns} purchaseInvoices={purchaseInvoices} supplierPayments={supplierPayments} items={items} setItems={setItems} suppliers={suppliers} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={purchaseReturnDraft} setDraft={setPurchaseReturnDraft} isEditing={purchaseReturnIsEditing} setIsEditing={setPurchaseReturnIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} customerReceipts={customerReceipts} expenses={expenses} treasuryTransfers={treasuryTransfers} treasuries={treasuries} />;
+      case 'supplierManagement': return <SupplierManagement suppliers={suppliers} setSuppliers={setSuppliers} showNotification={showNotification} currentUser={currentUser!} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} supplierPayments={supplierPayments} />;
+      case 'supplierPayment': return <SupplierPaymentManagement supplierPayments={supplierPayments} setSupplierPayments={setSupplierPayments} suppliers={suppliers} treasuries={treasuries} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} salesInvoices={salesInvoices} salesReturns={salesReturns} defaultValues={defaultValues} companyData={companyData} customerReceipts={customerReceipts} expenses={expenses} treasuryTransfers={treasuryTransfers} draft={supplierPaymentDraft} setDraft={setSupplierPaymentDraft} isEditing={supplierPaymentIsEditing} setIsEditing={setSupplierPaymentIsEditing} />;
+      case 'salesInvoice': return <SalesInvoiceManagement salesInvoices={salesInvoices} setSalesInvoices={setSalesInvoices} heldInvoices={heldInvoices} setHeldInvoices={setHeldInvoices} salesReturns={salesReturns} customerReceipts={customerReceipts} items={items} setItems={setItems} customers={customers} setCustomers={setCustomers} salesRepresentatives={salesRepresentatives} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} activeDiscounts={activeDiscounts} draft={salesInvoiceDraft} setDraft={setSalesInvoiceDraft} isEditing={salesInvoiceIsEditing} setIsEditing={setSalesInvoiceIsEditing} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} />;
+      case 'salesReturn': return <SalesReturnManagement salesReturns={salesReturns} setSalesReturns={setSalesReturns} salesInvoices={salesInvoices} customerReceipts={customerReceipts} items={items} setItems={setItems} customers={customers} salesRepresentatives={salesRepresentatives} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={salesReturnDraft} setDraft={setSalesReturnDraft} isEditing={salesReturnIsEditing} setIsEditing={setSalesReturnIsEditing} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} expenses={expenses} treasuryTransfers={treasuryTransfers} treasuries={treasuries} supplierPayments={supplierPayments} />;
+      case 'purchaseInvoice': return <PurchaseInvoiceManagement purchaseInvoices={purchaseInvoices} setPurchaseInvoices={setPurchaseInvoices} heldPurchaseInvoices={heldPurchaseInvoices} setHeldPurchaseInvoices={setHeldPurchaseInvoices} purchaseReturns={purchaseReturns} supplierPayments={supplierPayments} items={items} setItems={setItems} suppliers={suppliers} setSuppliers={setSuppliers} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={purchaseInvoiceDraft} setDraft={setPurchaseInvoiceDraft} isEditing={purchaseInvoiceIsEditing} setIsEditing={setPurchaseInvoiceIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} expenses={expenses} customerReceipts={customerReceipts} treasuryTransfers={treasuryTransfers} treasuries={treasuries} />;
+      case 'purchaseReturn': return <PurchaseReturnManagement purchaseReturns={purchaseReturns} setPurchaseReturns={setPurchaseReturns} purchaseInvoices={purchaseInvoices} supplierPayments={supplierPayments} items={items} setItems={setItems} suppliers={suppliers} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={purchaseReturnDraft} setDraft={setPurchaseReturnDraft} isEditing={purchaseReturnIsEditing} setIsEditing={setPurchaseReturnIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} customerReceipts={customerReceipts} expenses={expenses} treasuryTransfers={treasuryTransfers} treasuries={treasuries} />;
       case 'warehouseTransfer': return <WarehouseTransferManagement warehouseTransfers={warehouseTransfers} setWarehouseTransfers={setWarehouseTransfers} items={items} setItems={setItems} warehouses={warehouses} units={units} showNotification={showNotification} currentUser={currentUser!} draft={warehouseTransferDraft} setDraft={setWarehouseTransferDraft} isEditing={warehouseTransferIsEditing} setIsEditing={setWarehouseTransferIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} />;
       case 'treasuryTransfer': return <TreasuryTransferManagement treasuryTransfers={treasuryTransfers} setTreasuryTransfers={setTreasuryTransfers} treasuries={treasuries} showNotification={showNotification} currentUser={currentUser!} customerReceipts={customerReceipts} supplierPayments={supplierPayments} expenses={expenses} salesInvoices={salesInvoices} purchaseInvoices={purchaseInvoices} salesReturns={salesReturns} purchaseReturns={purchaseReturns} defaultValues={defaultValues} draft={treasuryTransferDraft} setDraft={setTreasuryTransferDraft} isEditing={treasuryTransferIsEditing} setIsEditing={setTreasuryTransferIsEditing} />;
       case 'importCostCalculator': return <ImportCostCalculator companyData={companyData} items={items} setItems={setItems} units={units} warehouses={warehouses} defaultValues={defaultValues} showNotification={showNotification} purchaseInvoices={purchaseInvoices} setPurchaseInvoices={setPurchaseInvoices} suppliers={suppliers} setSuppliers={setSuppliers} currentUser={currentUser!} savedMessages={importCalculatorHistory} setSavedMessages={setImportCalculatorHistory} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseReturns={purchaseReturns} />;
@@ -483,10 +468,9 @@ const App: React.FC = () => {
                     activeDatabaseId={activeDatabaseId} 
                     licenseStatus={licenseStatus}
                     onActivateClick={() => setShowManualActivation(true)}
-                    chatMessages={chatMessages}
-                    setChatMessages={setChatMessages}
                 />
             </div>
+            <Chat currentUser={null} departments={departments} chatMessages={chatMessages} setChatMessages={setChatMessages} isLoginScreen={true} />
         </div>
     );
   }

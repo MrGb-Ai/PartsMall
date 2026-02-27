@@ -36,6 +36,7 @@ export interface MgmtUser {
   lastModifiedAt?: string;
   lastModifiedBy?: string;
   isBlocked?: boolean;
+  expiresAt?: number;
 }
 
 export interface DatabaseProfile { id: string; name: string; }
