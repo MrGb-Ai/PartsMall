@@ -280,33 +280,25 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
         const finalizedId = typeof newInvoice.id === 'string' && newInvoice.id.startsWith('GRN-') ? getNextInvoiceId() : newInvoice.id;
         
         const invoiceToSave = { ...newInvoice };
-        invoiceToSave.paidAmount = 0; // Always 0 because cash invoices create a voucher instead
+        if (invoiceToSave.type === 'cash') {
+            invoiceToSave.paidAmount = total;
+        } else {
+            invoiceToSave.paidAmount = 0;
+        }
 
         if (isEditing) {
             const updated = { ...invoiceToSave, id: finalizedId, lastModifiedBy: currentUser.username, lastModifiedAt: new Date().toISOString() };
             setPurchaseInvoices(prev => prev.map(inv => inv.id === newInvoice.id ? updated : inv));
+            
+            // Clean up old auto-generated payment if it exists
+            setSupplierPayments(prev => prev.filter(p => p.notes !== `سداد فاتورة مشتريات رقم ${invoiceToSave.id}`));
+
             showNotification('edit'); if (printAfterSave) handlePrint(updated);
             window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بتعديل فاتورة مشتريات رقم ${finalizedId} للمورد ${suppliers.find(s => s.id === invoiceToSave.supplierId)?.name || ''}` }));
         } else {
             const created = { ...invoiceToSave, id: finalizedId, createdBy: currentUser.username, createdAt: new Date().toISOString() };
             setPurchaseInvoices(prev => [...prev, created]);
             
-            if (created.type === 'cash') {
-                const newPaymentId = supplierPayments.length > 0 ? Math.max(...supplierPayments.map(p => p.id)) + 1 : 1;
-                const newPayment = {
-                    id: newPaymentId,
-                    date: created.date,
-                    supplierId: created.supplierId,
-                    treasuryId: defaultValues.defaultTreasuryId,
-                    amount: total,
-                    notes: `سداد فاتورة مشتريات رقم ${created.id}`,
-                    paymentMethod: 'cash' as const,
-                    createdBy: currentUser.username,
-                    createdAt: new Date().toISOString()
-                };
-                setSupplierPayments(prev => [...prev, newPayment]);
-            }
-
             showNotification('add'); if (printAfterSave) handlePrint(created);
             window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بإنشاء فاتورة مشتريات رقم ${finalizedId} للمورد ${suppliers.find(s => s.id === invoiceToSave.supplierId)?.name || ''}` }));
         }
@@ -459,6 +451,7 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
             });
             setItems(updatedItems);
             setPurchaseInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete.id));
+            setSupplierPayments(prev => prev.filter(p => p.notes !== `سداد فاتورة مشتريات رقم ${invoiceToDelete.id}`));
             showNotification('delete');
         }
         setIsDeleteModalOpen(false);

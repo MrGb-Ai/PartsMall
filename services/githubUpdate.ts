@@ -7,33 +7,14 @@ export interface UpdateInfo {
 
 export const checkGitHubUpdate = async (repo: string, currentVersion: string): Promise<UpdateInfo> => {
     try {
-        if (!repo || !repo.trim() || !repo.includes('/')) {
+        if (!repo || !repo.includes('/')) {
             throw new Error('Invalid repository format. Use "owner/repo".');
         }
 
         const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
         
-        if (response.status === 404) {
-            console.warn(`GitHub repository or release not found: ${repo}`);
-            return {
-                hasUpdate: false,
-                latestVersion: '',
-                downloadUrl: '',
-                releaseNotes: ''
-            };
-        }
-
         if (!response.ok) {
-            let errorMessage = response.statusText;
-            try {
-                const errorBody = await response.json();
-                if (errorBody && errorBody.message) {
-                    errorMessage = `${errorMessage ? errorMessage + ' - ' : ''}${errorBody.message}`;
-                }
-            } catch (e) {
-                // Ignore JSON parse error if body is not JSON
-            }
-            throw new Error(`GitHub API Error: ${response.status} ${errorMessage}`);
+            throw new Error(`GitHub API Error: ${response.statusText}`);
         }
 
         const data = await response.json();

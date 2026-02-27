@@ -364,34 +364,26 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
         setItems(updatedItems);
         
         const invoiceToSave = { ...newInvoice };
-        invoiceToSave.paidAmount = 0; // Always 0 because cash invoices create a voucher instead
+        if (invoiceToSave.type === 'cash') {
+            invoiceToSave.paidAmount = total;
+        } else {
+            invoiceToSave.paidAmount = 0;
+        }
 
         if (isEditing) {
             const finalizedId = typeof invoiceToSave.id === 'string' ? getNextInvoiceId() : invoiceToSave.id;
             const updated = { ...invoiceToSave, id: finalizedId, lastModifiedBy: currentUser.username, lastModifiedAt: new Date().toISOString() };
             setSalesInvoices(prev => prev.map(inv => inv.id === invoiceToSave.id ? updated : inv));
+            
+            // Clean up old auto-generated receipt if it exists
+            setCustomerReceipts(prev => prev.filter(r => r.notes !== `سداد فاتورة مبيعات رقم ${invoiceToSave.id}`));
+
             showNotification('edit'); if (printAfterSave) handlePrint(updated);
             window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بتعديل فاتورة مبيعات رقم ${finalizedId} للعميل ${customers.find(c => c.id === invoiceToSave.customerId)?.name || ''}` }));
         } else {
             const created = { ...invoiceToSave, id: getNextInvoiceId(), createdBy: currentUser.username, createdAt: new Date().toISOString() };
             setSalesInvoices(prev => [...prev, created]);
             
-            if (created.type === 'cash') {
-                const newReceiptId = customerReceipts.length > 0 ? Math.max(...customerReceipts.map(r => r.id)) + 1 : 1;
-                const newReceipt = {
-                    id: newReceiptId,
-                    date: created.date,
-                    customerId: created.customerId,
-                    treasuryId: defaultValues.defaultTreasuryId,
-                    amount: total,
-                    notes: `سداد فاتورة مبيعات رقم ${created.id}`,
-                    paymentMethod: 'cash' as const,
-                    createdBy: currentUser.username,
-                    createdAt: new Date().toISOString()
-                };
-                setCustomerReceipts(prev => [...prev, newReceipt]);
-            }
-
             showNotification('add'); if (printAfterSave) handlePrint(created);
             window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بإنشاء فاتورة مبيعات رقم ${created.id} للعميل ${customers.find(c => c.id === invoiceToSave.customerId)?.name || ''}` }));
         }
@@ -677,7 +669,7 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
                 <ConfirmationModal 
                     title="تأكيد الحذف" 
                     message={`هل أنت متأكد من حذف الفاتورة رقم ${invoiceToDelete?.id}؟`} 
-                    onConfirm={() => { if (invoiceToDelete) { let upd = [...items]; invoiceToDelete.items.forEach(old => { const idx = upd.findIndex(i => i.id === old.itemId); if (idx > -1) upd[idx] = { ...upd[idx], openingBalance: upd[idx].openingBalance + old.quantity }; }); setItems(upd); setSalesInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete.id)); showNotification('delete'); } setIsDeleteModalOpen(false); setInvoiceToDelete(null); }} 
+                    onConfirm={() => { if (invoiceToDelete) { let upd = [...items]; invoiceToDelete.items.forEach(old => { const idx = upd.findIndex(i => i.id === old.itemId); if (idx > -1) upd[idx] = { ...upd[idx], openingBalance: upd[idx].openingBalance + old.quantity }; }); setItems(upd); setSalesInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete.id)); setCustomerReceipts(prev => prev.filter(r => r.notes !== `سداد فاتورة مبيعات رقم ${invoiceToDelete.id}`)); showNotification('delete'); } setIsDeleteModalOpen(false); setInvoiceToDelete(null); }} 
                     onCancel={() => setIsDeleteModalOpen(false)} 
                     confirmText="حذف" confirmColor="bg-red-600" 
                 />
