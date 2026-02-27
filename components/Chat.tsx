@@ -2,16 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { ChatChannel, ChatMessage, MgmtUser, Department } from '../types';
 import { MessageSquare, X, Mic, Square, Phone, Trash2, Edit2, Check, Headset } from 'lucide-react';
 import { Modal } from './Shared';
+import { GoogleGenAI } from "@google/genai";
 
 interface ChatProps {
-    currentUser: MgmtUser;
+    currentUser: MgmtUser | null;
     departments: Department[];
     chatMessages: ChatMessage[];
     setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
-    isSupportMode?: boolean;
+    isLoginScreen?: boolean;
 }
 
-const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, setChatMessages, isSupportMode = false }) => {
+const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, setChatMessages, isLoginScreen }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [channels, setChannels] = useState<ChatChannel[]>([]);
     const [activeChannelId, setActiveChannelId] = useState<string>('general');
@@ -26,47 +27,19 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
     const previousMessagesLength = useRef(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
-    const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-    const resetInactivityTimer = () => {
-        if (!isSupportMode) return;
-        if (inactivityTimerRef.current) {
-            clearTimeout(inactivityTimerRef.current);
-        }
-        inactivityTimerRef.current = setTimeout(() => {
-            setChatMessages(prev => {
-                const safePrev = Array.isArray(prev) ? prev : [];
-                return safePrev.filter(m => m.channelId !== 'support');
-            });
-        }, 30 * 60 * 1000); // 30 minutes
-    };
-
-    useEffect(() => {
-        return () => {
-            if (inactivityTimerRef.current) {
-                clearTimeout(inactivityTimerRef.current);
-            }
-        };
-    }, []);
 
     useEffect(() => {
         const safeMessages = Array.isArray(chatMessages) ? chatMessages : [];
         if (safeMessages.length > previousMessagesLength.current) {
             const newMsgs = safeMessages.slice(previousMessagesLength.current);
-            const hasNewFromOthers = newMsgs.some(m => m && m.senderId !== currentUser.id && m.senderId !== -1);
+            const hasNewFromOthers = newMsgs.some(m => m && m.senderId !== (currentUser?.id || -1));
             if (hasNewFromOthers && !isOpen) {
                 setUnreadMessages(true);
                 audioRef.current?.play().catch(e => console.log('Audio play blocked:', e));
             }
         }
         previousMessagesLength.current = safeMessages.length;
-    }, [chatMessages, isOpen, currentUser.id]);
-
-    useEffect(() => {
-        if (isOpen) {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [chatMessages, isOpen, activeChannelId]);
+    }, [chatMessages, isOpen, currentUser?.id]);
 
     const messagesByChannel = React.useMemo(() => {
         const safeMessages = Array.isArray(chatMessages) ? chatMessages : [];
@@ -79,79 +52,67 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
     }, [chatMessages]);
 
     useEffect(() => {
-        if (isSupportMode) {
+        if (isLoginScreen) {
             setChannels([{ id: 'support', name: 'الدعم الفني' }]);
             setActiveChannelId('support');
-        } else {
-            const safeDepartments = Array.isArray(departments) ? departments : [];
-            const initialChannels: ChatChannel[] = [
-                { id: 'general', name: 'عام' },
-                { id: 'support', name: 'الدعم الفني' },
-                { id: 'transactions', name: 'النظام' },
-                ...safeDepartments.map(d => ({ id: `department_${d.id}`, name: d.name }))
-            ];
-            setChannels(initialChannels);
+            return;
         }
-    }, [departments, isSupportMode]);
+        const safeDepartments = Array.isArray(departments) ? departments : [];
+        const initialChannels: ChatChannel[] = [
+            { id: 'general', name: 'عام' },
+            { id: 'transactions', name: 'النظام' },
+            { id: 'support', name: 'الدعم الفني' },
+            ...safeDepartments.map(d => ({ id: `department_${d.id}`, name: d.name }))
+        ];
+        setChannels(initialChannels);
+    }, [departments, isLoginScreen]);
 
-    const toggleChat = () => {
-        setIsOpen(!isOpen);
-        if (!isOpen) {
-            setUnreadMessages(false);
-        }
-    };
+    const handleAIResponse = async (userMessage: string) => {
+        try {
+            const apiKey = (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined) || import.meta.env.VITE_GEMINI_API_KEY || '';
+            const ai = new GoogleGenAI({ apiKey });
+            
+            const systemInstruction = `أنت مساعد ذكي للدعم الفني لبرنامج محاسبي.
+مهمتك هي الإجابة عن كيفية العمل على البرنامج مثل إصدار الفواتير، التكويد بجميع أنواعه، المصروفات، التقارير، وسندات القبض والدفع.
+إذا واجهت أي سؤال لا يمكنك الإجابة عليه، أو إذا طلب المستخدم أو الزائر التحدث مع الدعم الفني البشري، يجب عليك الرد حصراً بهذه العبارة: "للتواصل معانا والتحدث مع احد ممثلي الدعم الفني برجاء الاتصال او ارسال واتساب علي الرقم 01007608603".
+أجب باللغة العربية وبشكل احترافي ومختصر.`;
 
-    const triggerAutoReply = (userMessageText: string) => {
-        if (!isSupportMode || activeChannelId !== 'support') return;
+            const response = await ai.models.generateContent({
+                model: "gemini-3-flash-preview",
+                contents: userMessage,
+                config: {
+                    systemInstruction: systemInstruction,
+                }
+            });
 
-        const userText = userMessageText.toLowerCase();
-        let replyText = '';
+            const aiMessage: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                channelId: 'support',
+                senderId: -2,
+                senderName: 'الدعم الفني الذكي',
+                text: response.text || "عذراً، حدث خطأ أثناء معالجة طلبك.",
+                timestamp: Date.now(),
+            };
 
-        if (userText.includes('السلام عليكم') || userText.includes('مرحبا') || userText.includes('مرحباً') || userText.includes('اهلا')) {
-            replyText = 'وعليكم السلام ورحمة الله وبركاته، أهلاً بك في المساعد الذكي لنظام إدارة المبيعات. كيف يمكنني مساعدتك اليوم؟ يمكنك سؤالي عن كيفية استخدام أي شاشة في البرنامج.';
-        } else if (userText.includes('خدمة العملاء') || userText.includes('دعم فني') || userText.includes('تحدث مع') || userText.includes('موظف') || userText.includes('مساعدة') || userText.includes('اتصال') || userText.includes('رقم')) {
-            replyText = 'للتحدث مع خدمة العملاء أو الدعم الفني، يرجى التواصل معنا عبر الهاتف أو الواتساب على الرقم: 01007608603 وسيقوم أحد ممثلينا بمساعدتك فوراً.';
-        } else if (userText.includes('مبيعات') && (userText.includes('فاتورة') || userText.includes('فواتير') || userText.includes('اصدار'))) {
-            replyText = 'لإصدار فاتورة مبيعات، يرجى التوجه إلى قسم "المبيعات" من القائمة الجانبية، ثم الضغط على "فاتورة مبيعات جديدة". قم باختيار العميل وإضافة الأصناف ثم احفظ الفاتورة.';
-        } else if (userText.includes('مشتريات') && (userText.includes('فاتورة') || userText.includes('فواتير') || userText.includes('اصدار'))) {
-            replyText = 'لإصدار فاتورة مشتريات، يرجى التوجه إلى قسم "المشتريات" من القائمة الجانبية، ثم الضغط على "فاتورة مشتريات جديدة". قم باختيار المورد وإضافة الأصناف ثم احفظ الفاتورة.';
-        } else if (userText.includes('مرتجع') && userText.includes('مبيعات')) {
-            replyText = 'لإصدار مرتجع مبيعات، توجه إلى قسم "المبيعات" ثم "مرتجع مبيعات". يمكنك إنشاء المرتجع بناءً على فاتورة سابقة أو كمرتجع حر.';
-        } else if (userText.includes('مرتجع') && userText.includes('مشتريات')) {
-            replyText = 'لإصدار مرتجع مشتريات، توجه إلى قسم "المشتريات" ثم "مرتجع مشتريات". يمكنك إنشاء المرتجع بناءً على فاتورة سابقة أو كمرتجع حر.';
-        } else if (userText.includes('فاتورة') || userText.includes('فواتير') || userText.includes('اصدار')) {
-            replyText = 'هل تقصد فاتورة مبيعات أم فاتورة مشتريات؟ يرجى التوضيح لأتمكن من مساعدتك بشكل أفضل.';
-        } else if (userText.includes('تكويد') || userText.includes('صنف') || userText.includes('اصناف') || userText.includes('اضافة')) {
-            replyText = 'لإضافة أو تكويد صنف جديد، يمكنك الذهاب إلى "إدارة الأصناف" والضغط على "إضافة صنف جديد". قم بتعبئة بيانات الصنف مثل الاسم، الباركود، وسعر البيع.';
-        } else if (userText.includes('عميل') || userText.includes('عملاء')) {
-            replyText = 'لإدارة العملاء أو إضافة عميل جديد، توجه إلى "إدارة العملاء" من القائمة الرئيسية واضغط على "إضافة عميل جديد".';
-        } else if (userText.includes('مورد') || userText.includes('موردين')) {
-            replyText = 'لإدارة الموردين، يمكنك الدخول إلى "إدارة الموردين" من القائمة الرئيسية واضغط على "إضافة مورد جديد".';
-        } else if (userText.includes('خزينة') || userText.includes('مصروف') || userText.includes('مصروفات') || userText.includes('سند')) {
-            replyText = 'لإدارة الخزينة والمصروفات، يمكنك زيارة قسم "الخزينة" أو "المصروفات" لتسجيل حركات الدفع والقبض.';
-        } else if (userText.includes('كيف') || userText.includes('استخدام') || userText.includes('طريقة') || userText.includes('شرح') || userText.includes('عمل')) {
-            replyText = 'يمكنني مساعدتك في شرح أجزاء البرنامج مثل (الفواتير، الأصناف، العملاء). فقط اكتب ما تريد السؤال عنه. وإذا كنت تفضل التحدث مع موظف خدمة العملاء، يرجى كتابة "أريد التحدث مع خدمة العملاء".';
-        } else if (userText.includes('رسالة صوتية') || userText.includes('مكالمة')) {
-            replyText = 'عذراً، الرد الآلي لا يمكنه الاستماع للرسائل الصوتية أو المكالمات. يرجى التواصل معنا عبر الهاتف أو الواتساب على الرقم: 01007608603';
-        } else {
-            replyText = 'عفواً، لم أفهم طلبك بدقة. أنا المساعد الذكي للنظام، يمكنك سؤالي عن كيفية استخدام البرنامج (مثل: كيف أعمل فاتورة مبيعات؟). وإذا كنت تواجه مشكلة معقدة، يرجى كتابة "أريد التحدث مع خدمة العملاء".';
-        }
-
-        setTimeout(() => {
-            const replyMessage: ChatMessage = {
-                id: Date.now().toString(),
-                channelId: activeChannelId,
-                senderId: -1, // -1 for system/bot
-                senderName: 'الرد الآلي - الدعم الفني',
-                text: replyText,
+            setChatMessages(prev => {
+                const safePrev = Array.isArray(prev) ? prev : [];
+                return [...safePrev, aiMessage];
+            });
+        } catch (error) {
+            console.error("AI Error:", error);
+            const errorMessage: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                channelId: 'support',
+                senderId: -2,
+                senderName: 'الدعم الفني الذكي',
+                text: "بالتواصل عن طريق الواتساب او المكالمات علي الرقم 01007608603",
                 timestamp: Date.now(),
             };
             setChatMessages(prev => {
                 const safePrev = Array.isArray(prev) ? prev : [];
-                return [...safePrev, replyMessage];
+                return [...safePrev, errorMessage];
             });
-            resetInactivityTimer();
-        }, 1000);
+        }
     };
 
     const handleSendMessage = (e?: React.FormEvent) => {
@@ -172,13 +133,15 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
             return;
         }
 
-        const messageText = newMessage.trim();
+        const senderId = currentUser?.id || -1;
+        const senderName = currentUser?.fullName || 'زائر';
+
         const message: ChatMessage = {
             id: Date.now().toString(),
             channelId: activeChannelId,
-            senderId: currentUser.id,
-            senderName: currentUser.fullName,
-            text: messageText,
+            senderId: senderId,
+            senderName: senderName,
+            text: newMessage.trim(),
             timestamp: Date.now(),
         };
 
@@ -188,8 +151,10 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
         });
 
         setNewMessage('');
-        resetInactivityTimer();
-        triggerAutoReply(messageText);
+
+        if (activeChannelId === 'support') {
+            handleAIResponse(message.text);
+        }
     };
 
     const startRecording = async () => {
@@ -242,11 +207,14 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
     };
 
     const sendAudioMessage = (audioData: string) => {
+        const senderId = currentUser?.id || -1;
+        const senderName = currentUser?.fullName || 'زائر';
+
         const message: ChatMessage = {
             id: Date.now().toString(),
             channelId: activeChannelId,
-            senderId: currentUser.id,
-            senderName: currentUser.fullName,
+            senderId: senderId,
+            senderName: senderName,
             text: 'رسالة صوتية 🎤',
             timestamp: Date.now(),
             audioData: audioData
@@ -259,11 +227,14 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
     };
 
     const handleCall = () => {
+        const senderId = currentUser?.id || -1;
+        const senderName = currentUser?.fullName || 'زائر';
+
         const message: ChatMessage = {
             id: Date.now().toString(),
             channelId: activeChannelId,
-            senderId: currentUser.id,
-            senderName: currentUser.fullName,
+            senderId: senderId,
+            senderName: senderName,
             text: '📞 بدأ مكالمة صوتية...',
             timestamp: Date.now(),
             isCall: true
@@ -299,50 +270,42 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
         setNewMessage('');
     };
 
-    const renderMessageText = (text: string, senderId: number) => {
-        // Obfuscate sensitive data for non-admin users (assuming admin has ID 1)
-        // Pattern: [SENSITIVE:12345] -> 12345 for admin, ***** for others
-        const isAdmin = currentUser.id === 1 || (currentUser.permissions && currentUser.permissions.includes('admin'));
-        
-        // If it's the current user's message, they should see it clearly (optional, but usually good UX)
-        // But the requirement says "Show encrypted to others", implying only managers see it.
-        // Let's stick to: Admin/Manager sees all, others see encrypted.
-        
-        return text.split(/(\[SENSITIVE:.*?\])/g).map((part, index) => {
-            const match = part.match(/\[SENSITIVE:(.*?)\]/);
-            if (match) {
-                if (isAdmin) {
-                    return <span key={index} className="font-bold text-red-600 dark:text-red-400">{match[1]}</span>;
-                } else {
-                    return <span key={index} className="font-mono text-gray-500">******</span>;
-                }
-            }
-            return part;
-        });
-    };
-
-    const handleDeleteMessage = (msgId: string) => {
-        if (confirm('هل أنت متأكد من حذف هذه الرسالة؟')) {
-            setChatMessages(prev => {
-                const safePrev = Array.isArray(prev) ? prev : [];
-                return safePrev.filter(m => m.id !== msgId);
-            });
+    useEffect(() => {
+        if (isOpen) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-    };
+    }, [messagesByChannel, isOpen, activeChannelId]);
+
+    const toggleChat = () => {
+        setIsOpen(!isOpen);
+        if (!isOpen) {
+            setUnreadMessages(false);
+        }
+    }
 
     return (
         <>
             <audio ref={audioRef} src="/notification.mp3" preload="auto"></audio>
-            <div className="fixed bottom-8 right-8 z-[9999] flex flex-col items-center gap-2">
-                {isSupportMode && !isOpen && (
-                    <div className="bg-white text-emerald-700 px-3 py-1.5 rounded-full shadow-lg text-sm font-bold animate-bounce whitespace-nowrap border border-emerald-100">
-                        الدعم الفني
+            <div className="fixed bottom-8 right-8 z-[9999] flex flex-col items-center">
+                {isLoginScreen && !isOpen && (
+                    <div className="relative mb-3 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg whitespace-nowrap animate-bounce">
+                        نحن هنا لمساعدتك
+                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-blue-600 rotate-45"></div>
                     </div>
                 )}
                 <button 
                     onClick={toggleChat}
-                    className={`${isSupportMode ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-full p-4 shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 transform hover:scale-110`}>
-                    {isOpen ? <X size={28} /> : (isSupportMode ? <Headset size={28} /> : <MessageSquare size={28} />)}
+                    className={`bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 transform hover:scale-105 flex items-center justify-center ${isLoginScreen && !isOpen ? 'gap-2' : ''}`}>
+                    {isOpen ? <X size={28} /> : (
+                        isLoginScreen ? (
+                            <>
+                                <Headset size={28} />
+                                <span className="font-bold text-lg px-2">الدعم الفني</span>
+                            </>
+                        ) : (
+                            <MessageSquare size={28} />
+                        )
+                    )}
                     {unreadMessages && !isOpen && (
                         <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-red-500 border-2 border-white"></span>
                     )}
@@ -354,13 +317,11 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
                     {/* Header */}
                     <div className="p-4 bg-black/5 dark:bg-white/5 border-b border-white/20 dark:border-gray-700 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-                                {isSupportMode ? 'الدعم الفني' : 'المحادثات'}
-                            </h2>
+                            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">المحادثات</h2>
                             <button onClick={handleCall} className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors" title="اتصال صوتي">
                                 <Phone size={18} />
                             </button>
-                            {currentUser.id === 1 && (
+                            {currentUser?.id === 1 && (
                                 <button onClick={clearChat} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors" title="مسح محادثات القناة">
                                     <Trash2 size={18} />
                                 </button>
@@ -393,23 +354,17 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
                             <div className="flex-1 p-4 overflow-y-auto">
                                 {(messagesByChannel[activeChannelId] || []).map(msg => {
                                     if (!msg) return null;
+                                    const isCurrentUser = msg.senderId === (currentUser?.id || -1);
                                     return (
-                                    <div key={msg.id || Math.random()} className={`mb-3 flex ${msg.senderId === currentUser.id ? 'justify-end' : 'justify-start'} group`}>
-                                        <div className={`inline-block p-2 rounded-lg max-w-sm relative ${msg.senderId === currentUser.id ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}>
+                                    <div key={msg.id || Math.random()} className={`mb-3 flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
+                                        <div className={`inline-block p-2 rounded-lg max-w-sm relative ${isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}>
                                             <div className="font-bold text-sm flex justify-between items-center gap-4">
                                                 <span>{msg.senderName || 'مستخدم'}</span>
-                                                <div className="flex gap-1">
-                                                    {msg.senderId === currentUser.id && !msg.audioData && !msg.isCall && (Date.now() - msg.timestamp <= 120000) && (
-                                                        <button onClick={() => startEditing(msg)} className="opacity-0 group-hover:opacity-100 transition-opacity text-white/80 hover:text-white" title="تعديل (متاح لمدة دقيقتين)">
-                                                            <Edit2 size={14} />
-                                                        </button>
-                                                    )}
-                                                    {isSupportMode && (
-                                                        <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700" title="حذف">
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                {isCurrentUser && !msg.audioData && !msg.isCall && (Date.now() - msg.timestamp <= 120000) && (
+                                                    <button onClick={() => startEditing(msg)} className="opacity-0 group-hover:opacity-100 transition-opacity text-white/80 hover:text-white" title="تعديل (متاح لمدة دقيقتين)">
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                )}
                                             </div>
                                             {msg.isCall ? (
                                                 <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-bold my-2">
@@ -421,7 +376,7 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
                                                     <audio controls src={msg.audioData} className="max-w-[200px] h-8" />
                                                 </div>
                                             ) : (
-                                                <p className="text-sm">{renderMessageText(msg.text || '', msg.senderId)}</p>
+                                                <p className="text-sm">{msg.text || ''}</p>
                                             )}
                                             <div className="text-xs opacity-70 mt-1 text-right flex justify-end gap-1 items-center">
                                                 {msg.isEdited && <span className="text-[10px] italic">(معدلة)</span>}
@@ -437,7 +392,7 @@ const Chat: React.FC<ChatProps> = ({ currentUser, departments, chatMessages, set
                             <div className="p-3 bg-black/5 dark:bg-white/5 border-t border-white/20 dark:border-gray-700">
                                 {activeChannelId === 'transactions' ? (
                                     <div className="text-center text-sm text-gray-500 py-2">
-                                        هذه القناة مخصصة لسجل النظام ولا يمكن إرسال رسائل بها.
+                                        هذه القناة مخصصة لسجل النظام فقط ولا يمكن إرسال رسائل بها.
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSendMessage} className="flex space-x-2 space-x-reverse items-center">

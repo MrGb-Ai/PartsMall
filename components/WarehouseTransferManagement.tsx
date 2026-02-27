@@ -183,7 +183,6 @@ const WarehouseTransferManagement: React.FC<WarehouseTransferManagementProps> = 
         setItems(updatedItems);
         setWarehouseTransfers(prev => [...prev, { ...newTransfer, id: newTransfer.id, createdBy: currentUser.username, createdAt: new Date().toISOString() }]);
         showNotification('add');
-        window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بإنشاء تحويل مخزني رقم ${newTransfer.id} من مخزن ${warehouses.find(w => w.id === newTransfer.fromWarehouseId)?.name || ''} إلى مخزن ${warehouses.find(w => w.id === newTransfer.toWarehouseId)?.name || ''}` }));
         resetForm();
     };
 

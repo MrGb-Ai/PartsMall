@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
-import type { Department, MgmtUser } from '../types';
+import type { Department } from '../types';
 
-interface DepartmentManagementProps {
-    currentUser: MgmtUser;
-}
-
-const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ currentUser }) => {
+const DepartmentManagement: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([
     { id: 1, name: 'الإدارة' },
     { id: 2, name: 'الحسابات' },
@@ -24,7 +20,6 @@ const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ currentUser
         name: newDepartmentName.trim(),
       };
       setDepartments([...departments, newDepartment]);
-      window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بإضافة قسم جديد: ${newDepartment.name}` }));
       setNewDepartmentName('');
     }
   };

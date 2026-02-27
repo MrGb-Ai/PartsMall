@@ -5,6 +5,8 @@ import type { TreasuryTransfer, Treasury, NotificationType, MgmtUser, CustomerRe
 import { ConfirmationModal, DeleteIcon, EditIcon, ViewIcon, PrintIcon } from './Shared';
 import { useDateInput } from '../hooks/useDateInput';
 
+import { calculateTreasuryBalance } from '../utils/calculations';
+
 interface TreasuryTransferManagementProps {
     treasuryTransfers: TreasuryTransfer[];
     setTreasuryTransfers: React.Dispatch<React.SetStateAction<TreasuryTransfer[]>>;
@@ -76,51 +78,7 @@ const TreasuryTransferManagement: React.FC<TreasuryTransferManagementProps> = ({
     const dateInputProps = useDateInput(newTransfer.date, (d) => setNewTransfer((prev: any) => ({ ...prev, date: d })));
 
     const calculateCurrentBalance = (treasuryId: number, currentTransfers: TreasuryTransfer[]) => {
-        const treasury = treasuries.find(t => t.id === treasuryId);
-        if (!treasury) return 0;
-
-        let balance = treasury.openingBalance;
-
-        // Receipts
-        customerReceipts.forEach(rec => {
-            if (rec.treasuryId === treasuryId && (rec.paymentMethod === 'cash' || rec.paymentMethod === 'check')) {
-                balance += rec.amount;
-            }
-        });
-
-        // Payments
-        supplierPayments.forEach(p => {
-            if (p.treasuryId === treasuryId && (p.paymentMethod === 'cash' || p.paymentMethod === 'check')) {
-                balance -= p.amount;
-            }
-        });
-        
-        // Expenses
-        expenses.forEach(exp => {
-            if(exp.treasuryId === treasuryId){
-                balance -= exp.amount;
-            }
-        });
-        
-        // Transfers
-        currentTransfers.forEach(t => {
-            if (t.fromTreasuryId === treasuryId) {
-                balance -= t.amount;
-            }
-            if (t.toTreasuryId === treasuryId) {
-                balance += t.amount;
-            }
-        });
-
-        // Direct Invoice Payments (Default Treasury Logic)
-        if (treasuryId === defaultValues.defaultTreasuryId) {
-            salesInvoices.forEach(inv => { if (inv.paidAmount) balance += inv.paidAmount; });
-            purchaseInvoices.forEach(inv => { if (inv.paidAmount) balance -= inv.paidAmount; });
-            salesReturns.forEach(ret => { if (ret.paidAmount) balance -= ret.paidAmount; });
-            purchaseReturns.forEach(ret => { if (ret.paidAmount) balance += ret.paidAmount; });
-        }
-
-        return balance;
+        return calculateTreasuryBalance(treasuryId, treasuries, customerReceipts, supplierPayments, expenses, currentTransfers, salesInvoices, purchaseInvoices, salesReturns, purchaseReturns, defaultValues);
     };
 
     const treasuryBalances = useMemo(() => {
@@ -171,11 +129,9 @@ const TreasuryTransferManagement: React.FC<TreasuryTransferManagementProps> = ({
         if (isEditing && newTransfer.id) {
             setTreasuryTransfers(prev => prev.map(t => t.id === newTransfer.id ? { ...t, ...newTransfer, id: newTransfer.id! } : t));
             showNotification('edit');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بتعديل تحويل خزينة رقم ${newTransfer.id} بقيمة [SENSITIVE:${newTransfer.amount}]` }));
         } else {
             setTreasuryTransfers(prev => [...prev, { ...newTransfer, amount: newTransfer.amount, id: getNextTransferId(), createdBy: currentUser.username, createdAt: new Date().toISOString() }]);
             showNotification('add');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بإنشاء تحويل خزينة جديد بقيمة [SENSITIVE:${newTransfer.amount}]` }));
         }
         
         resetForm();

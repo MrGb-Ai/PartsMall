@@ -126,7 +126,6 @@ const TreasuryManagement: React.FC<TreasuryManagementProps> = ({
             }
             setTreasuries(treasuries.map(t => t.id === formData.id ? { ...t, name: formData.name, keeper: formData.keeper, openingBalance: formData.openingBalance || 0 } : t));
             showNotification('edit');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بتعديل بيانات الخزينة ${formData.name}` }));
         } else {
             const newTreasury: Treasury = {
                 id: Date.now(),
@@ -136,7 +135,6 @@ const TreasuryManagement: React.FC<TreasuryManagementProps> = ({
             };
             setTreasuries([...treasuries, newTreasury]);
             showNotification('add');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بإضافة خزينة جديدة ${formData.name}` }));
         }
         resetForm();
     };
@@ -157,7 +155,6 @@ const TreasuryManagement: React.FC<TreasuryManagementProps> = ({
         if (treasuryToDelete) {
             setTreasuries(treasuries.filter(t => t.id !== treasuryToDelete.id));
             showNotification('delete');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بحذف الخزينة ${treasuryToDelete.name}` }));
         }
         resetDeleteProcess();
     };

@@ -55,7 +55,6 @@ const ExpenseCategoryManagement: React.FC<ExpenseCategoryManagementProps> = ({ e
             }
             setExpenseCategories(expenseCategories.map(cat => cat.id === formData.id ? { ...cat, ...formData, code: finalCode, id: formData.id } : cat));
             showNotification('edit');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بتعديل بند المصروفات ${formData.name}` }));
         } else {
             if (!finalCode) {
                 finalCode = getNextCode();
@@ -72,7 +71,6 @@ const ExpenseCategoryManagement: React.FC<ExpenseCategoryManagementProps> = ({ e
             };
             setExpenseCategories([...expenseCategories, newCategory]);
             showNotification('add');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بإضافة بند مصروفات جديد ${formData.name}` }));
         }
         resetForm();
     };
@@ -93,7 +91,6 @@ const ExpenseCategoryManagement: React.FC<ExpenseCategoryManagementProps> = ({ e
         if (categoryToDelete) {
             setExpenseCategories(expenseCategories.filter(cat => cat.id !== categoryToDelete.id));
             showNotification('delete');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بحذف بند المصروفات ${categoryToDelete.name}` }));
         }
         cancelDelete();
     };

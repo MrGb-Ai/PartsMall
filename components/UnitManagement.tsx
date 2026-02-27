@@ -48,7 +48,6 @@ const UnitManagement: React.FC<UnitManagementProps> = ({ units, setUnits, items,
                 lastModifiedAt: new Date().toISOString()
             } : u));
             showNotification('edit');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بتعديل بيانات الوحدة ${formData.name}` }));
         } else {
             const newUnit: Unit = {
                 id: Date.now(),
@@ -59,7 +58,6 @@ const UnitManagement: React.FC<UnitManagementProps> = ({ units, setUnits, items,
             };
             setUnits([...units, newUnit]);
             showNotification('add');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بإضافة وحدة جديدة ${formData.name}` }));
         }
         resetForm();
     };
@@ -89,7 +87,6 @@ const UnitManagement: React.FC<UnitManagementProps> = ({ units, setUnits, items,
         if (unitToDelete) {
             setUnits(units.filter(u => u.id !== unitToDelete.id));
             showNotification('delete');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بحذف الوحدة ${unitToDelete.name}` }));
         }
         setIsDeleteModalOpen(false);
         setUnitToDelete(null);

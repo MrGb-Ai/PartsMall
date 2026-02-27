@@ -100,7 +100,6 @@ const SalesRepresentativeManagement: React.FC<SalesRepresentativeManagementProps
         if (repToDelete) {
             setSalesRepresentatives(salesRepresentatives.filter(rep => rep.id !== repToDelete.id));
             showNotification('delete');
-            window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بحذف المندوب ${repToDelete.name}` }));
         }
         cancelDelete();
     };

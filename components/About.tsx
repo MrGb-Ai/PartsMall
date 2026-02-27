@@ -242,7 +242,6 @@ const About: React.FC<AboutProps> = ({ updateAvailable, onNavigate, activeDataba
             
             <div className={`${cardClass} text-center`}>
                 <p className="text-gray-600 dark:text-gray-400">© {new Date().getFullYear()} جميع الحقوق محفوظة لـ ProDev Solutions</p>
-                <p className="mt-2 text-blue-600/80 dark:text-blue-400/80 font-medium">نحن نعمل دائماً لخدمتكم</p>
             </div>
         </div>
     );
