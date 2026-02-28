@@ -22,6 +22,7 @@ interface ItemMovementProps {
 interface ReportRow {
     date: string;
     docId: number | string;
+    permissionNumber?: string;
     type: string;
     view: string;
     incoming: number;
@@ -76,7 +77,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
 
         const targetId = targetItem.id;
         const currentSystemStock = targetItem.openingBalance || 0;
-        const allTransactions: { date: string, label: string, docId: any, view: string, change: number }[] = [];
+        const allTransactions: { date: string, label: string, docId: any, permissionNumber?: string, view: string, change: number }[] = [];
 
         // 1. مبيعات (منصرف)
         salesInvoices?.forEach(inv => {
@@ -87,6 +88,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                         date: inv.date, 
                         label: `فاتورة مبيعات - عميل: ${customer?.name || 'نقدي'}`, 
                         docId: inv.id, 
+                        permissionNumber: inv.permissionNumber,
                         view: 'salesInvoice', 
                         change: -line.quantity 
                     });
@@ -103,6 +105,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                         date: ret.date, 
                         label: `مرتجع مبيعات - من: ${customer?.name || 'نقدي'}`, 
                         docId: ret.id, 
+                        permissionNumber: ret.permissionNumber,
                         view: 'salesReturn', 
                         change: line.quantity 
                     });
@@ -119,6 +122,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                         date: inv.date, 
                         label: `فاتورة مشتريات - مورد: ${supplier?.name || 'غير معروف'}`, 
                         docId: inv.id, 
+                        permissionNumber: inv.permissionNumber,
                         view: 'purchaseInvoice', 
                         change: line.quantity 
                     });
@@ -135,6 +139,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                         date: ret.date, 
                         label: `مرتجع مشتريات - للمورد: ${supplier?.name || 'غير معروف'}`, 
                         docId: ret.id, 
+                        permissionNumber: ret.permissionNumber,
                         view: 'purchaseReturn', 
                         change: -line.quantity 
                     });
@@ -151,12 +156,12 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                     // صادر من المخزن المختار
                     if (Number(t.fromWarehouseId) === Number(selectedWarehouseId)) {
                         const toWh = warehouses?.find(w => w.id === t.toWarehouseId)?.name || 'مخزن آخر';
-                        allTransactions.push({ date: t.date, label: `تحويل مخزني صادر إلى: ${toWh}`, docId: t.id, view: 'warehouseTransfer', change: -line.quantity });
+                        allTransactions.push({ date: t.date, label: `تحويل مخزني صادر إلى: ${toWh}`, docId: t.id, permissionNumber: '-', view: 'warehouseTransfer', change: -line.quantity });
                     }
                     // وارد إلى المخزن المختار
                     if (Number(t.toWarehouseId) === Number(selectedWarehouseId)) {
                         const fromWh = warehouses?.find(w => w.id === t.fromWarehouseId)?.name || 'مخزن آخر';
-                        allTransactions.push({ date: t.date, label: `تحويل مخزني وارد من: ${fromWh}`, docId: t.id, view: 'warehouseTransfer', change: line.quantity });
+                        allTransactions.push({ date: t.date, label: `تحويل مخزني وارد من: ${fromWh}`, docId: t.id, permissionNumber: '-', view: 'warehouseTransfer', change: line.quantity });
                     }
                 }
             });
@@ -174,7 +179,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
 
         // إضافة سطر الرصيد الافتتاحي
         rows.push({
-            date: '', docId: '-', type: 'رصيد سابق / افتتاحـي', view: '',
+            date: '', docId: '-', permissionNumber: '-', type: 'رصيد سابق / افتتاحـي', view: '',
             incoming: 0, outgoing: 0, balanceAfter: openingBalance, isOpening: true
         });
 
@@ -184,6 +189,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
             rows.push({
                 date: t.date,
                 docId: t.docId,
+                permissionNumber: t.permissionNumber || '-',
                 type: t.label,
                 view: t.view,
                 incoming: t.change > 0 ? t.change : 0,
@@ -194,7 +200,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
 
         // إضافة سطر الإجمالي النهائي
         rows.push({
-            date: '', docId: '-', type: 'إجمالي الرصيد الحالي المتوفر', view: '',
+            date: '', docId: '-', permissionNumber: '-', type: 'إجمالي الرصيد الحالي المتوفر', view: '',
             incoming: 0, outgoing: 0, balanceAfter: runningBalance, isClosing: true
         });
 
@@ -215,6 +221,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
             <tr class="${row.isOpening || row.isClosing ? 'bg-gray-100 font-bold' : ''}">
                 <td class="border p-2 text-center">${row.date ? formatDateForDisplay(row.date) : '-'}</td>
                 <td class="border p-2 text-center">${row.docId}</td>
+                <td class="border p-2 text-center">${row.permissionNumber || '-'}</td>
                 <td class="border p-2 text-right">${row.type}</td>
                 <td class="border p-2 text-center text-green-700">${row.incoming || ''}</td>
                 <td class="border p-2 text-center text-red-600">${row.outgoing || ''}</td>
@@ -251,6 +258,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                         <tr class="bg-gray-200">
                             <th>التاريخ</th>
                             <th>المستند</th>
+                            <th>رقم الاذن</th>
                             <th>البيان</th>
                             <th>وارد (+)</th>
                             <th>منصرف (-)</th>
@@ -349,6 +357,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                                     <tr>
                                         <th className="p-4 border-b text-xs font-black text-gray-500 text-center w-32">التاريخ</th>
                                         <th className="p-4 border-b text-xs font-black text-gray-500 text-center w-24">المستند</th>
+                                        <th className="p-4 border-b text-xs font-black text-gray-500 text-center w-24">رقم الاذن</th>
                                         <th className="p-4 border-b text-xs font-black text-gray-500">البيان / الحركة</th>
                                         <th className="p-4 border-b text-xs font-black text-green-600 text-center w-24">وارد (+)</th>
                                         <th className="p-4 border-b text-xs font-black text-red-600 text-center w-24">منصرف (-)</th>
@@ -363,6 +372,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                                             <tr key={index} className={`border-b border-gray-100 dark:border-gray-800 transition-colors ${row.isOpening ? 'bg-green-50/30 dark:bg-green-900/10' : ''} ${row.isClosing ? 'bg-blue-50/30 dark:bg-blue-900/20' : ''} ${!isSpecial ? 'hover:bg-gray-50 dark:hover:bg-white/5' : ''}`}>
                                                 <td className="p-4 text-center text-xs text-gray-600 dark:text-gray-400 font-bold">{row.date ? formatDateForDisplay(row.date) : '-'}</td>
                                                 <td className="p-4 text-center font-mono text-sm font-bold text-indigo-600 dark:text-indigo-400">{row.docId}</td>
+                                                <td className="p-4 text-center font-mono text-sm font-bold text-gray-600 dark:text-gray-400">{row.permissionNumber || '-'}</td>
                                                 <td className={`p-4 text-sm font-bold ${isSpecial ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{row.type}</td>
                                                 <td className="p-4 text-center font-black text-green-600">{row.incoming > 0 ? `+${row.incoming}` : ''}</td>
                                                 <td className="p-4 text-center font-black text-red-600">{row.outgoing > 0 ? `-${row.outgoing}` : ''}</td>

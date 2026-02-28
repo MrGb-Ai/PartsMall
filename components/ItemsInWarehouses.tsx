@@ -220,15 +220,36 @@ const ItemsInWarehouses: React.FC<ItemsInWarehousesProps> = ({
 
     const handleExportExcel = () => {
         const dataToExport = (viewType === 'summary' ? summaryReportData : detailedReportData).map((item: any) => {
-            const row: any = {
-                'الباركود': item.barcode,
-                'اسم الصنف': item.name,
-                'رصيد حالي': item.openingBalance || item.currentBalance,
-            };
-            if (displayOptions.showPurchasePrice) row['سعر الشراء'] = item.purchasePrice;
-            if (displayOptions.showSellPrice) row['سعر البيع'] = item.sellPrice;
-            if (displayOptions.showProfitMargin) row['هامش الربح المتوقع'] = ((item.sellPrice - item.purchasePrice) * (item.openingBalance || item.currentBalance)).toFixed(2);
-            return row;
+            if (viewType === 'detailed') {
+                const row: any = {
+                    'الباركود': item.barcode,
+                    'اسم الصنف': item.name,
+                    'رصيد أول': item.calculatedOpening,
+                    'مشتريات': item.purchases,
+                    'م. مشتريات': item.purchaseReturns,
+                    'مبيعات': item.sales,
+                    'م. مبيعات': item.salesReturns,
+                    'رصيد آخر': item.currentBalance,
+                };
+                if (displayOptions.showPurchasePrice) row['سعر الشراء'] = item.purchasePrice;
+                if (displayOptions.showSellPrice) row['سعر البيع'] = item.sellPrice;
+                
+                warehouses.forEach(w => {
+                    row[w.name] = item.warehouseStock[w.id] || 0;
+                });
+                
+                return row;
+            } else {
+                const row: any = {
+                    'الباركود': item.barcode,
+                    'اسم الصنف': item.name,
+                    'رصيد حالي': item.openingBalance || item.currentBalance,
+                };
+                if (displayOptions.showPurchasePrice) row['سعر الشراء'] = item.purchasePrice;
+                if (displayOptions.showSellPrice) row['سعر البيع'] = item.sellPrice;
+                if (displayOptions.showProfitMargin) row['هامش الربح المتوقع'] = ((item.sellPrice - item.purchasePrice) * (item.openingBalance || item.currentBalance)).toFixed(2);
+                return row;
+            }
         });
         exportToExcel(dataToExport, `الاصناف_في_المخازن_${viewType}`);
     };
@@ -565,8 +586,10 @@ const ItemsInWarehouses: React.FC<ItemsInWarehousesProps> = ({
                                     <th className="p-2">الباركود</th>
                                     <th className="p-2">اسم الصنف</th>
                                     <th className="p-2 text-center">رصيد أول</th>
-                                    <th className="p-2 text-center">وارد</th>
-                                    <th className="p-2 text-center">منصرف</th>
+                                    <th className="p-2 text-center text-xs">مشتريات</th>
+                                    <th className="p-2 text-center text-xs">م. مشتريات</th>
+                                    <th className="p-2 text-center text-xs">مبيعات</th>
+                                    <th className="p-2 text-center text-xs">م. مبيعات</th>
                                     <th className="p-2 text-center bg-gray-100 dark:bg-gray-700">رصيد آخر</th>
                                     {displayOptions.showPurchasePrice && <th className="p-2 text-center">شراء</th>}
                                     {displayOptions.showSellPrice && <th className="p-2 text-center">بيع</th>}
@@ -580,8 +603,10 @@ const ItemsInWarehouses: React.FC<ItemsInWarehousesProps> = ({
                                         <td className="p-2 font-mono text-gray-500">{item.barcode}</td>
                                         <td className="p-2">{item.name}</td>
                                         <td className="p-2 text-center">{item.calculatedOpening}</td>
-                                        <td className="p-2 text-center text-green-600">{item.purchases + item.salesReturns}</td>
-                                        <td className="p-2 text-center text-red-500">{item.sales + item.purchaseReturns}</td>
+                                        <td className="p-2 text-center text-green-600">{item.purchases}</td>
+                                        <td className="p-2 text-center text-red-400">{item.purchaseReturns}</td>
+                                        <td className="p-2 text-center text-blue-600">{item.sales}</td>
+                                        <td className="p-2 text-center text-orange-400">{item.salesReturns}</td>
                                         <td className="p-2 text-center bg-gray-50 dark:bg-gray-700/50">{item.currentBalance}</td>
                                         {displayOptions.showPurchasePrice && <td className="p-2 text-center font-mono">{item.purchasePrice.toFixed(2)}</td>}
                                         {displayOptions.showSellPrice && <td className="p-2 text-center font-mono">{item.sellPrice.toFixed(2)}</td>}
