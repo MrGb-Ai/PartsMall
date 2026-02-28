@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PlusCircleIcon, PencilIcon, TrashIcon, BanIcon, CheckCircleIcon, SearchIcon, XIcon, SaveIcon } from 'lucide-react';
 import type { Employee, DayOfWeek, Department, MgmtUser } from '../types';
 
@@ -6,19 +6,10 @@ interface EmployeeManagementProps {
   employees: Employee[];
   setEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
   currentUser: MgmtUser;
+  departments: Department[];
 }
 
-const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setEmployees, currentUser }) => {
-  const [departments, setDepartments] = useState<Department[]>([
-    { id: 1, name: 'الإدارة' },
-    { id: 2, name: 'الحسابات' },
-    { id: 3, name: 'المبيعات' },
-    { id: 4, name: 'المشتريات' },
-    { id: 5, name: 'المخازن' },
-    { id: 6, name: 'العلاقات العامه' },
-    { id: 7, name: 'شئون العاملين' },
-  ]);
-
+const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setEmployees, currentUser, departments }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,7 +21,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
     nationalId: '',
     address: '',
     jobTitle: '',
-    departmentId: 1,
+    departmentId: departments.length > 0 ? departments[0].id : 0,
     salary: 0,
     vacationDays: [],
     isBlocked: false,
@@ -106,7 +97,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
   const closeModal = () => {
     setIsModalOpen(false);
     setIsEditing(false);
-    setCurrentEmployee({ ...initialEmployeeState });
+    setCurrentEmployee({ ...initialEmployeeState, departmentId: departments.length > 0 ? departments[0].id : 0 });
   };
 
   const filteredEmployees = employees.filter(emp => 
@@ -121,13 +112,13 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
         <div className="flex justify-between items-center mb-8">
             <div>
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
-                    <span className="text-emerald-600">إدارة</span> العاملين
+                    <span className="text-blue-600">إدارة</span> العاملين
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">إدارة بيانات الموظفين والرواتب والإجازات</p>
             </div>
             <button 
                 onClick={() => setIsModalOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 font-bold"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 font-bold"
             >
                 <PlusCircleIcon className="w-5 h-5" />
                 <span>إضافة عامل جديد</span>
@@ -142,7 +133,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                         placeholder="بحث بكود العامل، الاسم، أو رقم الهاتف..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white transition-all"
+                        className="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-all"
                     />
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 </div>
@@ -166,7 +157,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                         {filteredEmployees.length > 0 ? (
                             filteredEmployees.map((employee) => (
                                 <tr key={employee.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${employee.isBlocked ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
-                                    <td className="p-4 font-mono text-emerald-600 dark:text-emerald-400 font-bold">{employee.code || '-'}</td>
+                                    <td className="p-4 font-mono text-blue-600 dark:text-blue-400 font-bold">{employee.code || '-'}</td>
                                     <td className="p-4 font-bold text-gray-800 dark:text-gray-100">
                                         <div>{employee.name}</div>
                                         <div className="text-xs text-gray-400 font-normal mt-1">{employee.nationalId || '-'}</div>
@@ -176,12 +167,12 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                         <div className="text-xs">{employee.jobTitle}</div>
                                     </td>
                                     <td className="p-4 text-gray-600 dark:text-gray-300 font-mono" dir="ltr">{employee.phone || '-'}</td>
-                                    <td className="p-4 text-emerald-600 dark:text-emerald-400 font-bold">{(employee.salary || 0).toLocaleString()}</td>
+                                    <td className="p-4 text-blue-600 dark:text-blue-400 font-bold">{(employee.salary || 0).toLocaleString()}</td>
                                     <td className="p-4 text-gray-500 dark:text-gray-400 text-sm">
                                         {employee.vacationDays?.map(day => daysOfWeek.find(d => d.key === day)?.label).join('، ') || '-'}
                                     </td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${employee.isBlocked ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${employee.isBlocked ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                                             {employee.isBlocked ? 'محظور' : 'نشط'}
                                         </span>
                                     </td>
@@ -196,7 +187,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                             </button>
                                             <button 
                                                 onClick={() => handleToggleBlock(employee.id)}
-                                                className={`p-2 rounded-lg transition-colors ${employee.isBlocked ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : 'text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20'}`}
+                                                className={`p-2 rounded-lg transition-colors ${employee.isBlocked ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' : 'text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20'}`}
                                                 title={employee.isBlocked ? "فك الحظر" : "حظر"}
                                             >
                                                 {employee.isBlocked ? <CheckCircleIcon className="w-5 h-5" /> : <BanIcon className="w-5 h-5" />}
@@ -231,7 +222,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 dark:border-gray-700 transform transition-all">
                 <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        {isEditing ? <PencilIcon className="w-5 h-5 text-blue-500" /> : <PlusCircleIcon className="w-5 h-5 text-emerald-500" />}
+                        {isEditing ? <PencilIcon className="w-5 h-5 text-blue-500" /> : <PlusCircleIcon className="w-5 h-5 text-blue-500" />}
                         {isEditing ? 'تعديل بيانات عامل' : 'إضافة عامل جديد'}
                     </h2>
                     <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
@@ -248,7 +239,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                 name="code"
                                 value={currentEmployee.code}
                                 onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all font-mono"
+                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all font-mono"
                                 placeholder="مثال: EMP-001"
                             />
                         </div>
@@ -260,7 +251,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                 name="name"
                                 value={currentEmployee.name}
                                 onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
+                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
                                 placeholder="الاسم ثلاثي"
                             />
                         </div>
@@ -272,7 +263,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                 name="phone"
                                 value={currentEmployee.phone}
                                 onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all font-mono"
+                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all font-mono"
                                 dir="ltr"
                                 placeholder="01xxxxxxxxx"
                             />
@@ -285,7 +276,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                 name="nationalId"
                                 value={currentEmployee.nationalId}
                                 onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all font-mono"
+                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all font-mono"
                                 maxLength={14}
                             />
                         </div>
@@ -297,7 +288,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                 name="address"
                                 value={currentEmployee.address}
                                 onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
+                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
                             />
                         </div>
 
@@ -307,7 +298,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                 name="departmentId"
                                 value={currentEmployee.departmentId}
                                 onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
+                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
                             >
                                 {departments.map(dept => (
                                     <option key={dept.id} value={dept.id}>{dept.name}</option>
@@ -322,7 +313,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                 name="jobTitle"
                                 value={currentEmployee.jobTitle}
                                 onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
+                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
                             />
                         </div>
 
@@ -333,7 +324,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                 name="salary"
                                 value={currentEmployee.salary}
                                 onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
+                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
                                 min="0"
                             />
                         </div>
@@ -347,7 +338,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                                         onClick={() => handleDayToggle(day.key)}
                                         className={`px-4 py-2 rounded-lg text-sm font-bold transition-all border ${
                                             currentEmployee.vacationDays.includes(day.key)
-                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md transform scale-105'
+                                                ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105'
                                                 : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
                                         }`}
                                     >
@@ -368,7 +359,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                     </button>
                     <button 
                         onClick={handleSubmit}
-                        className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-lg flex items-center gap-2 transition-all"
+                        className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg flex items-center gap-2 transition-all"
                     >
                         <SaveIcon className="w-5 h-5" />
                         <span>{isEditing ? 'حفظ التعديلات' : 'إضافة العامل'}</span>

@@ -59,6 +59,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
   const [supplierInvoiceNumber, setSupplierInvoiceNumber] = useState('');
   const [selectedSupplierId, setSelectedSupplierId] = useState<number>(0);
   const [targetWarehouseId, setTargetWarehouseId] = useState<number>(defaultValues.defaultWarehouseId);
+  const [invoiceType, setInvoiceType] = useState<'cash' | 'credit'>('credit');
   const [entryDate, setEntryDate] = useState(today);
   const entryDateInputProps = useDateInput(entryDate, setEntryDate);
 
@@ -163,7 +164,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
     return results.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   }, [savedMessages, logSearchQuery]);
 
-  const syncInventoryLogic = (msgItems: ImportItem[], msgExpenses: typeof expenses, msgUsdRmb: number, msgUsdEgp: number, warehouseId: number, suppId: number, dateStr: string, invNo: string, msgName: string, existingPurchaseId?: number | string) => {
+  const syncInventoryLogic = (msgItems: ImportItem[], msgExpenses: typeof expenses, msgUsdRmb: number, msgUsdEgp: number, warehouseId: number, suppId: number, dateStr: string, invNo: string, msgName: string, invType: 'cash' | 'credit', existingPurchaseId?: number | string) => {
     let updatedItemsList = [...items];
     let purchaseItems: PurchaseInvoiceItem[] = [];
     
@@ -263,9 +264,9 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
             permissionNumber: 'رسالة استيرادية',
             items: purchaseItems,
             discount: 0, tax: 0,
-            paidAmount: finalInvoiceTotal,
+            paidAmount: invType === 'cash' ? finalInvoiceTotal : 0,
             notes: `مزامنة من حاسبة الاستيراد: ${msgName}`,
-            type: 'cash',
+            type: invType,
             createdBy: currentUser.username,
             createdAt: new Date().toISOString()
         };
@@ -298,7 +299,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
     let finalLinkedId = linkedId;
     if (isExistingSynced && linkedId) {
         if (confirm("هذه الرسالة تمت مزامنتها مسبقاً مع المخازن. هل تريد تحديث بيانات المخازن وفاتورة الشراء المرتبطة بها؟")) {
-             finalLinkedId = syncInventoryLogic(importItems, expenses, usdToRmb, usdToEgp, targetWarehouseId, selectedSupplierId, entryDate, supplierInvoiceNumber, messageName, linkedId);
+             finalLinkedId = syncInventoryLogic(importItems, expenses, usdToRmb, usdToEgp, targetWarehouseId, selectedSupplierId, entryDate, supplierInvoiceNumber, messageName, invoiceType, linkedId);
         }
     }
 
@@ -310,6 +311,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
       supplierId: selectedSupplierId,
       entryDate,
       warehouseId: targetWarehouseId,
+      invoiceType,
       status: isExistingSynced ? 'synced' : 'draft',
       linkedPurchaseInvoiceId: finalLinkedId,
       usdToRmb,
@@ -346,7 +348,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
         } else suppId = importSupp.id;
     }
 
-    const purchaseId = syncInventoryLogic(msg.items, msg.expenses, msg.usdToRmb, msg.usdToEgp, msg.warehouseId, suppId, msg.entryDate || today, msg.supplierInvoiceNumber || '-', msg.messageName, undefined);
+    const purchaseId = syncInventoryLogic(msg.items, msg.expenses, msg.usdToRmb, msg.usdToEgp, msg.warehouseId, suppId, msg.entryDate || today, msg.supplierInvoiceNumber || '-', msg.messageName, msg.invoiceType || 'credit', undefined);
 
     setSavedMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'synced', linkedPurchaseInvoiceId: purchaseId } : m));
     showNotification('save');
@@ -361,6 +363,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
     const supp = suppliers.find(s => s.id === msg.supplierId);
     setSupplierSearchQuery(supp ? supp.name : '');
     setTargetWarehouseId(msg.warehouseId);
+    setInvoiceType(msg.invoiceType || 'credit');
     setEntryDate(msg.entryDate || today);
     setUsdToRmb(msg.usdToRmb);
     setUsdToEgp(msg.usdToEgp);
@@ -382,6 +385,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
     setSelectedSupplierId(0);
     setSupplierSearchQuery('');
     setTargetWarehouseId(defaultValues.defaultWarehouseId);
+    setInvoiceType('credit');
     setEntryDate(today);
     setExpenses({ shipping: 0, customs: 0, clearance: 0, commissions: 0, others: 0 });
     setImportItems([]);
@@ -419,7 +423,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
             </div>
             <div class="grid grid-cols-3 gap-4 mb-4 text-sm border p-4 rounded-lg bg-gray-50">
                 <div>المورد: <span class="font-bold">${supplierSearchQuery || 'غير محدد'}</span></div>
-                <div>رقم الفاتورة: <span class="font-bold">${supplierInvoiceNumber || '-'}</span></div>
+                <div>رقم اذن الافراج: <span class="font-bold">${supplierInvoiceNumber || '-'}</span></div>
                 <div>التاريخ: <span class="font-bold">${formatDateForDisplay(entryDate)}</span></div>
                 <div>سعر الـ USD/RMB: <span class="font-bold">${usdToRmb}</span></div>
                 <div>سعر الـ USD/EGP: <span class="font-bold">${usdToEgp}</span></div>
@@ -485,14 +489,23 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                  <div><label className={labelClass}>رقم الفاتورة</label><input type="text" value={supplierInvoiceNumber} onChange={e => setSupplierInvoiceNumber(e.target.value)} className={inputClass} disabled={viewOnly} /></div>
+                  <div><label className={labelClass}>رقم اذن الافراج</label><input type="text" value={supplierInvoiceNumber} onChange={e => setSupplierInvoiceNumber(e.target.value)} className={inputClass} disabled={viewOnly} /></div>
                   <div><label className={labelClass}>تاريخ التوريد</label><input type="text" {...entryDateInputProps} className={inputClass} disabled={viewOnly} /></div>
               </div>
-              <div>
-                  <label className={labelClass}>المخزن المستهدف (للمزامنة)</label>
-                  <select value={targetWarehouseId} onChange={e => setTargetWarehouseId(Number(e.target.value))} className={inputClass} disabled={viewOnly}>
-                      {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
+              <div className="grid grid-cols-2 gap-3">
+                  <div>
+                      <label className={labelClass}>المخزن المستهدف (للمزامنة)</label>
+                      <select value={targetWarehouseId} onChange={e => setTargetWarehouseId(Number(e.target.value))} className={inputClass} disabled={viewOnly}>
+                          {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label className={labelClass}>نوع الفاتورة</label>
+                      <select value={invoiceType} onChange={e => setInvoiceType(e.target.value as 'cash' | 'credit')} className={inputClass} disabled={viewOnly}>
+                          <option value="credit">آجل (على الحساب)</option>
+                          <option value="cash">نقدي (تم السداد)</option>
+                      </select>
+                  </div>
               </div>
               <hr />
               <div className="grid grid-cols-2 gap-3">
@@ -624,7 +637,7 @@ const ImportCostCalculator: React.FC<ImportCostCalculatorProps> = ({
       {/* History Log Modal */}
       <Modal title="سجل الرسائل الاستيرادية" show={isLogModalOpen} onClose={() => setIsLogModalOpen(false)}>
           <div className="space-y-4">
-              <input type="text" value={logSearchQuery} onChange={e => setLogSearchQuery(e.target.value)} placeholder="بحث باسم الرسالة أو رقم الفاتورة..." className={inputClass} />
+              <input type="text" value={logSearchQuery} onChange={e => setLogSearchQuery(e.target.value)} placeholder="بحث باسم الرسالة أو رقم اذن الافراج..." className={inputClass} />
               <div className="overflow-auto max-h-[60vh] border rounded-lg">
                   <table className="w-full text-right border-collapse">
                       <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 font-bold">

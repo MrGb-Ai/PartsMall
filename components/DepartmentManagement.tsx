@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import type { Department } from '../types';
 
-const DepartmentManagement: React.FC = () => {
-  const [departments, setDepartments] = useState<Department[]>([
-    { id: 1, name: 'الإدارة' },
-    { id: 2, name: 'الحسابات' },
-    { id: 3, name: 'المبيعات' },
-    { id: 4, name: 'المشتريات' },
-    { id: 5, name: 'المخازن' },
-    { id: 6, name: 'العلاقات العامه' },
-    { id: 7, name: 'شئون العاملين' },
-  ]);
+interface DepartmentManagementProps {
+  departments: Department[];
+  setDepartments: React.Dispatch<React.SetStateAction<Department[]>>;
+}
+
+const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ departments, setDepartments }) => {
   const [newDepartmentName, setNewDepartmentName] = useState('');
 
   const handleAddDepartment = () => {

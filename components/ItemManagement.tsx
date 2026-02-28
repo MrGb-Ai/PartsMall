@@ -115,25 +115,7 @@ const ItemManagement: React.FC<ItemManagementProps> = ({
     };
 
     const calculateActualStock = (item: Item) => {
-        let totalPurchases = 0;
-        let totalPurchaseReturns = 0;
-        let totalSales = 0;
-        let totalSalesReturns = 0;
-
-        purchaseInvoices.forEach(inv => {
-            inv.items.forEach(line => { if (line.itemId === item.id) totalPurchases += line.quantity; });
-        });
-        purchaseReturns.forEach(ret => {
-            ret.items.forEach(line => { if (line.itemId === item.id) totalPurchaseReturns += line.quantity; });
-        });
-        salesInvoices.forEach(inv => {
-            inv.items.forEach(line => { if (line.itemId === item.id) totalSales += line.quantity; });
-        });
-        salesReturns.forEach(ret => {
-            ret.items.forEach(line => { if (line.itemId === item.id) totalSalesReturns += line.quantity; });
-        });
-
-        return (item.initialBalance || 0) + totalPurchases - totalPurchaseReturns - totalSales + totalSalesReturns;
+        return item.openingBalance;
     };
 
     const handleSubmit = (e: React.FormEvent) => {

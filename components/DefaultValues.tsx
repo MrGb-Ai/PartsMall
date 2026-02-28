@@ -29,6 +29,8 @@ const DefaultValuesComponent: React.FC<DefaultValuesProps> = ({
         if (type === 'checkbox') {
              const checked = (e.target as HTMLInputElement).checked;
              setFormData(prev => ({ ...prev, [name]: checked }));
+        } else if (name === 'backgroundOpacity' || name === 'backgroundBlur') {
+             setFormData(prev => ({ ...prev, [name]: parseFloat(value) }));
         } else {
             const isNumeric = ['defaultWarehouseId', 'defaultUnitId', 'defaultSalesRepId', 'defaultTreasuryId'].includes(name);
             setFormData(prev => ({ ...prev, [name]: isNumeric ? parseInt(value) : value as any }));
@@ -142,8 +144,33 @@ const DefaultValuesComponent: React.FC<DefaultValuesProps> = ({
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">ستظهر هذه الصورة كخلفية لجميع شاشات البرنامج بما في ذلك صفحة الدخول.</p>
                         </div>
-                        <div className="flex items-center">
-                            {/* Removed enableBackupAlert checkbox */}
+                        <div className="space-y-4">
+                            <label className={labelClass}>شفافية طبقة التعتيم ({Math.round((formData.backgroundOpacity !== undefined ? formData.backgroundOpacity : 0.6) * 100)}%)</label>
+                            <input 
+                                type="range" 
+                                name="backgroundOpacity" 
+                                min="0" 
+                                max="1" 
+                                step="0.05" 
+                                value={formData.backgroundOpacity !== undefined ? formData.backgroundOpacity : 0.6} 
+                                onChange={handleInputChange} 
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                            />
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">تحكم في درجة وضوح الخلفية (كلما زادت النسبة زاد التعتيم).</p>
+                        </div>
+                        <div className="space-y-4">
+                            <label className={labelClass}>تمويه الخلفية ({formData.backgroundBlur !== undefined ? formData.backgroundBlur : 2}px)</label>
+                            <input 
+                                type="range" 
+                                name="backgroundBlur" 
+                                min="0" 
+                                max="20" 
+                                step="1" 
+                                value={formData.backgroundBlur !== undefined ? formData.backgroundBlur : 2} 
+                                onChange={handleInputChange} 
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                            />
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">تحكم في ضبابية الخلفية (0 = صورة حادة).</p>
                         </div>
                     </div>
 

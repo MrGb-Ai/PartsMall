@@ -174,7 +174,7 @@ const App: React.FC = () => {
   };
 
   const defaultCompanyData: CompanyData = { name: 'اسم الشركة', cr: '', tr: '', phone1: '', phone2: '', address: '' };
-  const defaultDefaultValues: DefaultValues = { defaultWarehouseId: 1, defaultUnitId: 1, defaultSalesRepId: 0, defaultTreasuryId: 1, defaultPaymentMethodInvoices: 'credit', defaultPaymentMethodReceipts: 'cash', invoiceFooter: '', whatsappFooter: '', enableBackupAlert: true, backgroundImage: '' };
+  const defaultDefaultValues: DefaultValues = { defaultWarehouseId: 1, defaultUnitId: 1, defaultSalesRepId: 0, defaultTreasuryId: 1, defaultPaymentMethodInvoices: 'credit', defaultPaymentMethodReceipts: 'cash', invoiceFooter: '', whatsappFooter: '', enableBackupAlert: true, backgroundImage: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop', backgroundOpacity: 0.6 };
 
   const [databases, setDatabases] = useSyncedState<DatabaseProfile[]>('databases', [{ id: '', name: 'البيانات الرئيسية (السحابة)' }], 'SYSTEM_METADATA');
   const [users, setUsers] = useSyncedState<MgmtUser[]>('users', []);
@@ -199,6 +199,12 @@ const App: React.FC = () => {
   const [warehouseTransfers, setWarehouseTransfers] = useSyncedState<WarehouseTransfer[]>('warehouseTransfers', []);
   const [treasuryTransfers, setTreasuryTransfers] = useSyncedState<TreasuryTransfer[]>('treasuryTransfers', []);
   const [defaultValues, setDefaultValues] = useSyncedState<DefaultValues>('defaultValues', defaultDefaultValues);
+
+  useEffect(() => {
+    if (!defaultValues.backgroundImage) {
+        setDefaultValues(prev => ({ ...prev, backgroundImage: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop' }));
+    }
+  }, [defaultValues.backgroundImage]);
   const [activeDiscounts, setActiveDiscounts] = useSyncedState<Record<number, number>>('activeDiscounts', {});
   const [selectedDiscountItems, setSelectedDiscountItems] = useSyncedState<StorableDiscountItem[]>('selectedDiscountItems', []);
   const [importCalculatorHistory, setImportCalculatorHistory] = useSyncedState<SavedImport[]>('importCalculatorHistory', []);
@@ -363,7 +369,7 @@ const App: React.FC = () => {
       case 'userManagement': return <UserManagement users={users} setUsers={setUsers} showNotification={showNotification} currentUser={currentUser!} employees={employees} />;
       case 'userPermissions': return <UserPermissions users={users} setUsers={setUsers} showNotification={showNotification} />;
       case 'companySettings': return <CompanySettings companyData={companyData} setCompanyData={setCompanyData} showNotification={showNotification} />;
-      case 'departmentManagement': return <DepartmentManagement />;
+      case 'departmentManagement': return <DepartmentManagement departments={departments} setDepartments={setDepartments} />;
       case 'cloudSettings': return <CloudSettings firebaseConfig={firebaseConfig} setFirebaseConfig={setFirebaseConfig} showNotification={showNotification} />;
       case 'defaultValues': return <DefaultValuesComponent defaultValues={defaultValues} setDefaultValues={setDefaultValues} warehouses={warehouses} units={units} salesRepresentatives={salesRepresentatives} treasuries={treasuries} showNotification={showNotification} />;
       case 'backupSettings': return <BackupSettings appData={{users, companyData, warehouses, units, items, treasuries, expenseCategories, expenses, customers, customerReceipts, salesRepresentatives, suppliers, supplierPayments, salesInvoices, salesReturns, purchaseInvoices, purchaseReturns, warehouseTransfers, treasuryTransfers, defaultValues, activeDiscounts, selectedDiscountItems, importCalculatorHistory}} onRestore={handleRestoreAppData} showNotification={showNotification} databases={databases} setDatabases={setDatabases} activeDatabaseId={activeDatabaseId} setActiveDatabaseId={activeDatabaseIdSet} allDataKeys={[]} />;
@@ -409,7 +415,7 @@ const App: React.FC = () => {
       case 'discountManagement': return <DiscountManagement items={items} companyData={companyData} activeDiscounts={activeDiscounts} setActiveDiscounts={setActiveDiscounts} showNotification={showNotification} selectedDiscountItems={selectedDiscountItems} setSelectedDiscountItems={setSelectedDiscountItems} />;
       case 'salaries': return <Salaries />;
       case 'attendance': return <Attendance />;
-      case 'employeeManagement': return <EmployeeManagement employees={employees} setEmployees={setEmployees} currentUser={currentUser!} />;
+      case 'employeeManagement': return <EmployeeManagement employees={employees} setEmployees={setEmployees} currentUser={currentUser!} departments={departments} />;
       case 'appUnlock': return <AppUnlock users={users} setUsers={setUsers} showNotification={showNotification} />;
       case 'about': return <About updateAvailable={updateAvailable} onNavigate={setCurrentView} activeDatabaseName={databases?.find(d => d.id === activeDatabaseId)?.name || 'البيانات الرئيسية (السحابة)'} isDBReady={isDBReady} isCloudConnected={isCloudConnected} />;
       
@@ -459,7 +465,7 @@ const App: React.FC = () => {
   if (!isLoggedIn || !currentUser) {
     return (
         <div style={globalBackgroundStyle} className="min-h-screen relative">
-            {defaultValues.backgroundImage && <div className="absolute inset-0 bg-white/40 dark:bg-gray-900/60 backdrop-blur-[2px]"></div>}
+            {defaultValues.backgroundImage && <div className="absolute inset-0" style={{ backgroundColor: theme === 'dark' ? `rgba(17, 24, 39, ${defaultValues.backgroundOpacity ?? 0.6})` : `rgba(255, 255, 255, ${defaultValues.backgroundOpacity ?? 0.6})`, backdropFilter: `blur(${defaultValues.backgroundBlur !== undefined ? defaultValues.backgroundBlur : 2}px)` }}></div>}
             <div className="relative z-10 h-full">
                 <Login 
                     onLogin={handleLogin} 
@@ -468,6 +474,7 @@ const App: React.FC = () => {
                     activeDatabaseId={activeDatabaseId} 
                     licenseStatus={licenseStatus}
                     onActivateClick={() => setShowManualActivation(true)}
+                    transparent={!!defaultValues.backgroundImage}
                 />
             </div>
             <Chat currentUser={null} departments={departments} chatMessages={chatMessages} setChatMessages={setChatMessages} isLoginScreen={true} />
@@ -477,7 +484,7 @@ const App: React.FC = () => {
 
   return (
     <div style={globalBackgroundStyle} className="h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300 relative overflow-hidden">
-      {defaultValues.backgroundImage && <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-[2px] pointer-events-none z-0"></div>}
+      {defaultValues.backgroundImage && <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundColor: theme === 'dark' ? `rgba(17, 24, 39, ${defaultValues.backgroundOpacity ?? 0.6})` : `rgba(255, 255, 255, ${defaultValues.backgroundOpacity ?? 0.6})`, backdropFilter: `blur(${defaultValues.backgroundBlur !== undefined ? defaultValues.backgroundBlur : 2}px)` }}></div>}
       
       <div className="relative z-10 flex flex-col h-full">
         {licenseStatus && !licenseStatus.isActivated && (

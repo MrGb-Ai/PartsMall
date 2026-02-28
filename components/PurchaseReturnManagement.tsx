@@ -113,6 +113,15 @@ const PurchaseReturnManagement: React.FC<PurchaseReturnManagementProps> = ({
     const quantityInputRef = useRef<HTMLInputElement>(null);
     const priceInputRef = useRef<HTMLInputElement>(null);
     const itemSearchInputRef = useRef<HTMLInputElement>(null);
+    const itemsTableRef = useRef<HTMLDivElement>(null);
+    const prevItemsLength = useRef(0);
+
+    useEffect(() => {
+        if (itemsTableRef.current && newReturn.items.length > prevItemsLength.current) {
+            itemsTableRef.current.scrollTop = itemsTableRef.current.scrollHeight;
+        }
+        prevItemsLength.current = newReturn.items.length;
+    }, [newReturn.items.length]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [returnToDelete, setReturnToDelete] = useState<PurchaseReturn | null>(null);
     const [isQuickAddItemModalOpen, setIsQuickAddItemModalOpen] = useState(false);
@@ -136,25 +145,7 @@ const PurchaseReturnManagement: React.FC<PurchaseReturnManagementProps> = ({
         const item = items.find(i => i.id === itemId);
         if (!item) return 0;
 
-        let totalPurchases = 0;
-        let totalPurchaseReturns = 0;
-        let totalSales = 0;
-        let totalSalesReturns = 0;
-
-        purchaseInvoices.forEach(inv => {
-            inv.items.forEach(line => { if (line.itemId === item.id) totalPurchases += line.quantity; });
-        });
-        purchaseReturns.forEach(ret => {
-            ret.items.forEach(line => { if (line.itemId === item.id) totalPurchaseReturns += line.quantity; });
-        });
-        salesInvoices.forEach(inv => {
-            inv.items.forEach(line => { if (line.itemId === item.id) totalSales += line.quantity; });
-        });
-        salesReturns.forEach(ret => {
-            ret.items.forEach(line => { if (line.itemId === item.id) totalSalesReturns += line.quantity; });
-        });
-
-        let available = (item.initialBalance || 0) + totalPurchases - totalPurchaseReturns - totalSales + totalSalesReturns;
+        let available = item.openingBalance;
 
         if (isEditing) {
             const originalReturn = purchaseReturns.find(r => r.id === newReturn.id);
@@ -637,7 +628,7 @@ const PurchaseReturnManagement: React.FC<PurchaseReturnManagementProps> = ({
                                     {isSupplierSuggestionsOpen && <ul className="absolute z-[1000] w-full bg-white dark:bg-gray-800 border-2 border-red-300 rounded mt-1 max-h-40 overflow-y-auto top-full shadow-2xl">{suggestedSuppliers.map(s => <li key={s.id} onMouseDown={() => { handleSupplierSelect(s); }} className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer font-bold border-b last:border-0 dark:text-white">{s.name}</li>)}</ul>}
                                 </div>
                                  {supplierBalance !== null && (
-                                     <div className="absolute top-full right-0 text-xl font-black mt-1 whitespace-nowrap z-0">
+                                     <div className="mt-2 text-xl font-black whitespace-nowrap z-0">
                                          <span className="text-gray-700 dark:text-gray-400">الرصيد: </span>
                                          <span className={supplierBalance >= 0 ? 'text-green-600' : 'text-red-600'}><FormattedNumber value={Math.abs(supplierBalance)} /></span>
                                          <span className="text-xs text-gray-500 mr-1">({supplierBalance >= 0 ? 'له' : 'عليه'})</span>
@@ -733,9 +724,9 @@ const PurchaseReturnManagement: React.FC<PurchaseReturnManagementProps> = ({
             </div>
 
             <div className={`${cardClass} relative z-0`}>
-                 <div className="overflow-x-auto">
+                 <div ref={itemsTableRef} className="overflow-x-auto max-h-[500px] overflow-y-auto">
                      <table className="w-full text-right table-fixed border-collapse">
-                         <thead className="border-b-2 border-gray-400/50 bg-gray-50 dark:bg-gray-800">
+                         <thead className="border-b-2 border-gray-400/50 bg-gray-50 dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
                              <tr>
                                  <th className="p-2 text-sm font-bold text-center" style={{ width: '10%' }}>الباركود</th>
                                  <th className="p-2 text-sm font-bold text-right" style={{ width: '30%' }}>الصنف</th>

@@ -15,9 +15,10 @@ interface LoginProps {
     activeDatabaseId: string;
     licenseStatus: LicenseStatus | null;
     onActivateClick?: () => void;
+    transparent?: boolean;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, users, setUsers, activeDatabaseId, licenseStatus, onActivateClick }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, users, setUsers, activeDatabaseId, licenseStatus, onActivateClick, transparent }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -158,8 +159,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, setUsers, activeDatabaseI
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-rose-50 to-emerald-50 rtl overflow-hidden font-sans relative">
+    <div className={`min-h-screen flex items-center justify-center p-4 rtl overflow-hidden font-sans relative ${transparent ? '' : 'bg-gradient-to-br from-orange-50 via-rose-50 to-emerald-50'}`}>
         {/* Decorative Background - Sunrise & Nature Theme */}
+        {!transparent && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <motion.div 
                 animate={{ 
@@ -189,6 +191,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, setUsers, activeDatabaseI
                 className="absolute -bottom-[20%] left-[10%] w-[80%] h-[80%] rounded-full bg-gradient-to-tr from-amber-300 to-orange-500 blur-[120px] mix-blend-multiply"
             ></motion.div>
         </div>
+        )}
 
         <div className="w-full max-w-md relative z-10">
             <motion.div

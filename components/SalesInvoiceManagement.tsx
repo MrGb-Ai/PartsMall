@@ -117,6 +117,15 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
     const quantityInputRef = useRef<HTMLInputElement>(null);
     const priceInputRef = useRef<HTMLInputElement>(null);
     const itemSearchInputRef = useRef<HTMLInputElement>(null);
+    const itemsTableRef = useRef<HTMLDivElement>(null);
+    const prevItemsLength = useRef(0);
+
+    useEffect(() => {
+        if (itemsTableRef.current && newInvoice.items.length > prevItemsLength.current) {
+            itemsTableRef.current.scrollTop = itemsTableRef.current.scrollHeight;
+        }
+        prevItemsLength.current = newInvoice.items.length;
+    }, [newInvoice.items.length]);
 
     const [isLogVisible, setIsLogVisible] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -175,25 +184,7 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
         const item = items.find(i => i.id === itemId);
         if (!item) return 0;
 
-        let totalPurchases = 0;
-        let totalPurchaseReturns = 0;
-        let totalSales = 0;
-        let totalSalesReturns = 0;
-
-        purchaseInvoices.forEach(inv => {
-            inv.items.forEach(line => { if (line.itemId === item.id) totalPurchases += line.quantity; });
-        });
-        purchaseReturns.forEach(ret => {
-            ret.items.forEach(line => { if (line.itemId === item.id) totalPurchaseReturns += line.quantity; });
-        });
-        salesInvoices.forEach(inv => {
-            inv.items.forEach(line => { if (line.itemId === item.id) totalSales += line.quantity; });
-        });
-        salesReturns.forEach(ret => {
-            ret.items.forEach(line => { if (line.itemId === item.id) totalSalesReturns += line.quantity; });
-        });
-
-        let available = (item.initialBalance || 0) + totalPurchases - totalPurchaseReturns - totalSales + totalSalesReturns;
+        let available = item.openingBalance;
 
         if (isEditing) {
             const originalInvoice = salesInvoices.find(inv => inv.id === newInvoice.id);
@@ -750,7 +741,7 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
                                     )}
                                 </div>
                                  {selectedCustomerBalance !== null && (
-                                     <div className="absolute top-full right-0 text-xl font-black mt-1 whitespace-nowrap z-0">
+                                     <div className="mt-2 text-xl font-black whitespace-nowrap z-0">
                                          <span className="text-gray-700 dark:text-gray-400">الرصيد: </span>
                                          <span className={selectedCustomerBalance >= 0 ? 'text-red-600' : 'text-green-600'}><FormattedNumber value={Math.abs(selectedCustomerBalance)} /></span>
                                          <span className="text-xs text-gray-500 mr-1">({selectedCustomerBalance >= 0 ? 'عليه' : 'له'})</span>
@@ -850,9 +841,9 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
             </div>
 
             <div className={`${cardClass} relative z-0`}>
-                 <div className="overflow-x-auto font-bold text-sm">
+                 <div ref={itemsTableRef} className="overflow-x-auto font-bold text-sm max-h-[500px] overflow-y-auto">
                      <table className="w-full text-right table-fixed">
-                         <thead className="border-b-2 border-gray-400/50 bg-gray-50 dark:bg-gray-800">
+                         <thead className="border-b-2 border-gray-400/50 bg-gray-50 dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
                              <tr>
                                  <th className="p-2 text-sm font-bold text-black dark:text-gray-100 text-center" style={{ width: '10%' }}>الباركود</th>
                                  <th className="p-2 text-sm font-bold text-black dark:text-gray-100 text-right" style={{ width: '25%' }}>الصنف</th>

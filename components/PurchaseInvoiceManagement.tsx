@@ -98,6 +98,15 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
 
     const quantityInputRef = useRef<HTMLInputElement>(null);
     const itemSearchInputRef = useRef<HTMLInputElement>(null);
+    const itemsTableRef = useRef<HTMLDivElement>(null);
+    const prevItemsLength = useRef(0);
+
+    useEffect(() => {
+        if (itemsTableRef.current && newInvoice.items.length > prevItemsLength.current) {
+            itemsTableRef.current.scrollTop = itemsTableRef.current.scrollHeight;
+        }
+        prevItemsLength.current = newInvoice.items.length;
+    }, [newInvoice.items.length]);
     
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [invoiceToDelete, setInvoiceToDelete] = useState<PurchaseInvoice | null>(null);
@@ -122,35 +131,7 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
     const getAvailableStock = (itemId: number) => {
         const item = items.find(i => i.id === itemId);
         if (!item) return 0;
-
-        let totalPurchases = 0;
-        let totalPurchaseReturns = 0;
-        let totalSales = 0;
-        let totalSalesReturns = 0;
-
-        purchaseInvoices.forEach(inv => {
-            inv.items.forEach(line => { if (line.itemId === item.id) totalPurchases += line.quantity; });
-        });
-        purchaseReturns.forEach(ret => {
-            ret.items.forEach(line => { if (line.itemId === item.id) totalPurchaseReturns += line.quantity; });
-        });
-        salesInvoices.forEach(inv => {
-            inv.items.forEach(line => { if (line.itemId === item.id) totalSales += line.quantity; });
-        });
-        salesReturns.forEach(ret => {
-            ret.items.forEach(line => { if (line.itemId === item.id) totalSalesReturns += line.quantity; });
-        });
-
-        let available = (item.initialBalance || 0) + totalPurchases - totalPurchaseReturns - totalSales + totalSalesReturns;
-
-        if (isEditing) {
-            const originalInvoice = purchaseInvoices.find(inv => inv.id === newInvoice.id);
-            if (originalInvoice) {
-                const originalItem = originalInvoice.items.find(i => i.itemId === itemId);
-                if (originalItem) available -= originalItem.quantity;
-            }
-        }
-        return available;
+        return item.openingBalance;
     };
 
     const getTreasuryBalance = (treasuryId: number) => {
@@ -607,7 +588,7 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
                                         </ul>
                                     )}
                                 </div>
-                                {supplierBalance !== null && <div className="absolute top-full right-0 text-xl font-black mt-1 whitespace-nowrap z-0"><span className="text-gray-700 dark:text-gray-400">الرصيد: </span><span className={supplierBalance >= 0 ? 'text-green-600' : 'text-red-600'}><FormattedNumber value={Math.abs(supplierBalance)} /></span><span className="text-xs text-gray-500 mr-1">({supplierBalance >= 0 ? 'له' : 'عليه'})</span></div>}
+                                {supplierBalance !== null && <div className="mt-2 text-xl font-black whitespace-nowrap z-0"><span className="text-gray-700 dark:text-gray-400">الرصيد: </span><span className={supplierBalance >= 0 ? 'text-green-600' : 'text-red-600'}><FormattedNumber value={Math.abs(supplierBalance)} /></span><span className="text-xs text-gray-500 mr-1">({supplierBalance >= 0 ? 'له' : 'عليه'})</span></div>}
                              </div>
                              <div className="lg:col-span-2"><label className={labelClass}>فاتورة المورد</label><input type="text" value={newInvoice.supplierInvoiceNumber} onChange={(e) => setNewInvoice(p=>({...p, supplierInvoiceNumber: e.target.value}))} className={inputClass} /></div>
                              <div className="lg:col-span-2 relative z-[80]">
@@ -686,9 +667,9 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
             </div>
 
             <div className={`${cardClass} relative z-0`}>
-                 <div className="overflow-x-auto font-bold text-sm">
+                 <div ref={itemsTableRef} className="overflow-x-auto font-bold text-sm max-h-[500px] overflow-y-auto">
                     <table className="w-full text-right table-fixed border-collapse">
-                        <thead className="bg-gray-50 dark:bg-gray-800 border-b-2 border-gray-400/50">
+                        <thead className="bg-gray-50 dark:bg-gray-800 border-b-2 border-gray-400/50 sticky top-0 z-10 shadow-sm">
                             <tr>
                                 <th className="p-2 text-sm font-bold text-center" style={{ width: '10%' }}>الباركود</th>
                                 <th className="p-2 text-sm font-bold text-right" style={{ width: '25%' }}>الصنف</th>
