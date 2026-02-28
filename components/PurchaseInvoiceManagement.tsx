@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Modal, ConfirmationModal, PlusCircleIcon, DeleteIcon, EditIcon, PrintIcon, ViewIcon, FormattedNumber, ChevronDownIcon, ArchiveIcon } from './Shared';
+import { Modal, ConfirmationModal, PlusCircleIcon, DeleteIcon, EditIcon, PrintIcon, ViewIcon, FormattedNumber, ChevronDownIcon, ArchiveIcon, WhatsAppIcon } from './Shared';
 import type { PurchaseInvoice, PurchaseInvoiceItem, Item, Supplier, Warehouse, CompanyData, NotificationType, PurchaseReturn, SupplierPayment, MgmtUser, DefaultValues, Unit, DocToView, SalesInvoice, SalesReturn, CustomerReceipt, Expense, TreasuryTransfer, Treasury } from '../types';
 import QuickAddItemModal from './QuickAddItemModal';
 import QuickAddContactModal from './QuickAddContactModal';
-import { formatNumber, normalizeText, searchMatch, formatDateForDisplay, roundTo2 } from '../utils';
+import { formatNumber, normalizeText, searchMatch, formatDateForDisplay, roundTo2, formatPhoneNumberForWhatsApp } from '../utils';
 import BarcodePrintModal, { BarcodeItem } from './BarcodePrintModal';
 import { useDateInput } from '../hooks/useDateInput';
 
@@ -767,7 +767,14 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
                                                 <td className="p-3 text-emerald-700 dark:text-green-400">{inv.id}</td><td className="p-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{inv.supplierInvoiceNumber || '-'}</td><td className="p-3 text-gray-700 dark:text-gray-300">{formatDateForDisplay(inv.date)}</td><td className="p-3 text-gray-800 dark:text-gray-200">{suppliers.find(s=>s.id===inv.supplierId)?.name || 'غير معروف'}</td>
                                                 <td className="p-3"><span className={`px-2 py-1 rounded text-xs font-black ${inv.type === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{inv.type === 'cash' ? 'نقدي' : 'آجل'}</span></td>
                                                 <td className="p-3 font-black text-gray-900 dark:text-white"><FormattedNumber value={invTotal} /></td>
-                                                <td className="p-3"><div className="flex justify-center gap-2"><button onClick={() => handleEdit(inv)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors" title="تعديل"><EditIcon /></button><button onClick={() => handlePrint(inv)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors" title="طباعة"><PrintIcon /></button>{canDelete && <button onClick={() => {setInvoiceToDelete(inv); setIsDeleteModalOpen(true);}} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors" title="حذف"><DeleteIcon /></button>}</div></td>
+                                                <td className="p-3"><div className="flex justify-center gap-2"><button onClick={() => handleEdit(inv)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors" title="تعديل"><EditIcon /></button><button onClick={() => handlePrint(inv)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors" title="طباعة"><PrintIcon /></button><button onClick={() => {
+                                                    const supplier = suppliers.find(s => s.id === inv.supplierId);
+                                                    const phoneNumber = formatPhoneNumberForWhatsApp(supplier?.phone || '');
+                                                    const itemsTotal = inv.items.reduce((s,i)=>s+i.price*i.quantity,0);
+                                                    const invTotal = (itemsTotal - inv.discount) * (1 + inv.tax / 100);
+                                                    const text = `فاتورة مشتريات رقم: ${inv.id}%0Aالتاريخ: ${formatDateForDisplay(inv.date)}%0Aالمورد: ${supplier?.name || ''}%0Aالإجمالي: ${formatNumber(invTotal)}${defaultValues.whatsappFooter ? '%0A' + encodeURIComponent(defaultValues.whatsappFooter) : ''}`;
+                                                    window.open(phoneNumber ? `https://wa.me/${phoneNumber}?text=${text}` : `https://wa.me/?text=${text}`, '_blank');
+                                                }} className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors" title="واتساب"><WhatsAppIcon /></button>{canDelete && <button onClick={() => {setInvoiceToDelete(inv); setIsDeleteModalOpen(true);}} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors" title="حذف"><DeleteIcon /></button>}</div></td>
                                             </tr>
                                         );
                                     })}

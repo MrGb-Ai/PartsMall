@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import type { TreasuryTransfer, Treasury, NotificationType, MgmtUser, CustomerReceipt, SupplierPayment, Expense, SalesInvoice, PurchaseInvoice, SalesReturn, PurchaseReturn, DefaultValues } from '../types';
-import { ConfirmationModal, DeleteIcon, EditIcon, ViewIcon, PrintIcon } from './Shared';
+import { ConfirmationModal, DeleteIcon, EditIcon, ViewIcon, PrintIcon, WhatsAppIcon } from './Shared';
 import { useDateInput } from '../hooks/useDateInput';
 
 import { calculateTreasuryBalance } from '../utils/calculations';
@@ -300,6 +300,12 @@ const TreasuryTransferManagement: React.FC<TreasuryTransferManagementProps> = ({
                                             <button onClick={() => handlePrint(t)} className="p-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full" title="طباعة">
                                                 <PrintIcon />
                                             </button>
+                                            <button onClick={() => {
+                                                const fromTreasury = treasuries.find(tr => tr.id === t.fromTreasuryId)?.name || 'N/A';
+                                                const toTreasury = treasuries.find(tr => tr.id === t.toTreasuryId)?.name || 'N/A';
+                                                const text = `تحويل خزينة رقم: ${t.id}%0Aالتاريخ: ${new Date(t.date).toLocaleDateString('ar-EG')}%0Aمن: ${fromTreasury}%0Aإلى: ${toTreasury}%0Aالمبلغ: ${t.amount.toFixed(2)}${defaultValues.whatsappFooter ? '%0A' + encodeURIComponent(defaultValues.whatsappFooter) : ''}`;
+                                                window.open(`https://wa.me/?text=${text}`, '_blank');
+                                            }} className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors" title="واتساب"><WhatsAppIcon /></button>
                                             {canDelete && <button onClick={() => handleDelete(t)} className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full">
                                                 <DeleteIcon />
                                             </button>}

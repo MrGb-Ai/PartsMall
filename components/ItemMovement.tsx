@@ -257,7 +257,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                     <thead>
                         <tr class="bg-gray-200">
                             <th>التاريخ</th>
-                            <th>المستند</th>
+                            <th>رقم المستند</th>
                             <th>رقم الاذن</th>
                             <th>البيان</th>
                             <th>وارد (+)</th>
@@ -356,7 +356,7 @@ const ItemMovement: React.FC<ItemMovementProps> = ({
                                 <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-10">
                                     <tr>
                                         <th className="p-4 border-b text-xs font-black text-gray-500 text-center w-32">التاريخ</th>
-                                        <th className="p-4 border-b text-xs font-black text-gray-500 text-center w-24">المستند</th>
+                                        <th className="p-4 border-b text-xs font-black text-gray-500 text-center w-24">رقم المستند</th>
                                         <th className="p-4 border-b text-xs font-black text-gray-500 text-center w-24">رقم الاذن</th>
                                         <th className="p-4 border-b text-xs font-black text-gray-500">البيان / الحركة</th>
                                         <th className="p-4 border-b text-xs font-black text-green-600 text-center w-24">وارد (+)</th>

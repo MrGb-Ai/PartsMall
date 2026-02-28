@@ -391,7 +391,7 @@ const App: React.FC = () => {
       case 'salesReturn': return <SalesReturnManagement salesReturns={salesReturns} setSalesReturns={setSalesReturns} salesInvoices={salesInvoices} customerReceipts={customerReceipts} items={items} setItems={setItems} customers={customers} salesRepresentatives={salesRepresentatives} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={salesReturnDraft} setDraft={setSalesReturnDraft} isEditing={salesReturnIsEditing} setIsEditing={setSalesReturnIsEditing} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} expenses={expenses} treasuryTransfers={treasuryTransfers} treasuries={treasuries} supplierPayments={supplierPayments} setSupplierPayments={setSupplierPayments} />;
       case 'purchaseInvoice': return <PurchaseInvoiceManagement purchaseInvoices={purchaseInvoices} setPurchaseInvoices={setPurchaseInvoices} heldPurchaseInvoices={heldPurchaseInvoices} setHeldPurchaseInvoices={setHeldPurchaseInvoices} purchaseReturns={purchaseReturns} supplierPayments={supplierPayments} setSupplierPayments={setSupplierPayments} items={items} setItems={setItems} suppliers={suppliers} setSuppliers={setSuppliers} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={purchaseInvoiceDraft} setDraft={setPurchaseInvoiceDraft} isEditing={purchaseInvoiceIsEditing} setIsEditing={setPurchaseInvoiceIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} expenses={expenses} customerReceipts={customerReceipts} treasuryTransfers={treasuryTransfers} treasuries={treasuries} />;
       case 'purchaseReturn': return <PurchaseReturnManagement purchaseReturns={purchaseReturns} setPurchaseReturns={setPurchaseReturns} purchaseInvoices={purchaseInvoices} supplierPayments={supplierPayments} items={items} setItems={setItems} suppliers={suppliers} warehouses={warehouses} units={units} companyData={companyData} showNotification={showNotification} docToView={docToView} onClearDocToView={() => setDocToView(null)} currentUser={currentUser!} defaultValues={defaultValues} draft={purchaseReturnDraft} setDraft={setPurchaseReturnDraft} isEditing={purchaseReturnIsEditing} setIsEditing={setPurchaseReturnIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} customerReceipts={customerReceipts} setCustomerReceipts={setCustomerReceipts} expenses={expenses} treasuryTransfers={treasuryTransfers} treasuries={treasuries} />;
-      case 'warehouseTransfer': return <WarehouseTransferManagement warehouseTransfers={warehouseTransfers} setWarehouseTransfers={setWarehouseTransfers} items={items} setItems={setItems} warehouses={warehouses} units={units} showNotification={showNotification} currentUser={currentUser!} draft={warehouseTransferDraft} setDraft={setWarehouseTransferDraft} isEditing={warehouseTransferIsEditing} setIsEditing={setWarehouseTransferIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} />;
+      case 'warehouseTransfer': return <WarehouseTransferManagement warehouseTransfers={warehouseTransfers} setWarehouseTransfers={setWarehouseTransfers} items={items} setItems={setItems} warehouses={warehouses} units={units} showNotification={showNotification} currentUser={currentUser!} draft={warehouseTransferDraft} setDraft={setWarehouseTransferDraft} isEditing={warehouseTransferIsEditing} setIsEditing={setWarehouseTransferIsEditing} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} defaultValues={defaultValues} />;
       case 'treasuryTransfer': return <TreasuryTransferManagement treasuryTransfers={treasuryTransfers} setTreasuryTransfers={setTreasuryTransfers} treasuries={treasuries} showNotification={showNotification} currentUser={currentUser!} customerReceipts={customerReceipts} supplierPayments={supplierPayments} expenses={expenses} salesInvoices={salesInvoices} purchaseInvoices={purchaseInvoices} salesReturns={salesReturns} purchaseReturns={purchaseReturns} defaultValues={defaultValues} draft={treasuryTransferDraft} setDraft={setTreasuryTransferDraft} isEditing={treasuryTransferIsEditing} setIsEditing={setTreasuryTransferIsEditing} />;
       case 'importCostCalculator': return <ImportCostCalculator companyData={companyData} items={items} setItems={setItems} units={units} warehouses={warehouses} defaultValues={defaultValues} showNotification={showNotification} purchaseInvoices={purchaseInvoices} setPurchaseInvoices={setPurchaseInvoices} suppliers={suppliers} setSuppliers={setSuppliers} currentUser={currentUser!} savedMessages={importCalculatorHistory} setSavedMessages={setImportCalculatorHistory} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseReturns={purchaseReturns} />;
       case 'warehouseInventory': return <WarehouseInventory items={items} setItems={setItems} warehouses={warehouses} companyData={companyData} users={users} showNotification={showNotification} salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} />;
@@ -455,8 +455,33 @@ const App: React.FC = () => {
       );
   }
 
-  const globalBackgroundStyle: React.CSSProperties = defaultValues.backgroundImage ? {
+  const defaultBackgroundStyle: React.CSSProperties = defaultValues.backgroundImage ? {
     backgroundImage: `url(${defaultValues.backgroundImage})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+  } : {};
+
+  const getActiveBackground = () => {
+      if (currentView === 'salesInvoice' && defaultValues.salesInvoiceBackground) {
+          return { img: defaultValues.salesInvoiceBackground, opacity: defaultValues.salesInvoiceOpacity ?? 0.6 };
+      }
+      if (currentView === 'purchaseInvoice' && defaultValues.purchaseInvoiceBackground) {
+          return { img: defaultValues.purchaseInvoiceBackground, opacity: defaultValues.purchaseInvoiceOpacity ?? 0.6 };
+      }
+      if (currentView === 'salesReturn' && defaultValues.salesReturnBackground) {
+          return { img: defaultValues.salesReturnBackground, opacity: defaultValues.salesReturnOpacity ?? 0.6 };
+      }
+      if (currentView === 'purchaseReturn' && defaultValues.purchaseReturnBackground) {
+          return { img: defaultValues.purchaseReturnBackground, opacity: defaultValues.purchaseReturnOpacity ?? 0.6 };
+      }
+      return { img: defaultValues.backgroundImage, opacity: defaultValues.backgroundOpacity ?? 0.6 };
+  };
+
+  const { img: activeBgImage, opacity: activeBgOpacity } = getActiveBackground();
+
+  const activeBackgroundStyle: React.CSSProperties = activeBgImage ? {
+    backgroundImage: `url(${activeBgImage})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundAttachment: 'fixed',
@@ -464,7 +489,7 @@ const App: React.FC = () => {
 
   if (!isLoggedIn || !currentUser) {
     return (
-        <div style={globalBackgroundStyle} className="min-h-screen relative">
+        <div style={defaultBackgroundStyle} className="min-h-screen relative">
             {defaultValues.backgroundImage && <div className="absolute inset-0" style={{ backgroundColor: theme === 'dark' ? `rgba(17, 24, 39, ${defaultValues.backgroundOpacity ?? 0.6})` : `rgba(255, 255, 255, ${defaultValues.backgroundOpacity ?? 0.6})`, backdropFilter: `blur(${defaultValues.backgroundBlur !== undefined ? defaultValues.backgroundBlur : 2}px)` }}></div>}
             <div className="relative z-10 h-full">
                 <Login 
@@ -483,8 +508,8 @@ const App: React.FC = () => {
   }
 
   return (
-    <div style={globalBackgroundStyle} className="h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300 relative overflow-hidden">
-      {defaultValues.backgroundImage && <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundColor: theme === 'dark' ? `rgba(17, 24, 39, ${defaultValues.backgroundOpacity ?? 0.6})` : `rgba(255, 255, 255, ${defaultValues.backgroundOpacity ?? 0.6})`, backdropFilter: `blur(${defaultValues.backgroundBlur !== undefined ? defaultValues.backgroundBlur : 2}px)` }}></div>}
+    <div style={activeBackgroundStyle} className="h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300 relative overflow-hidden">
+      {activeBgImage && <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundColor: theme === 'dark' ? `rgba(17, 24, 39, ${activeBgOpacity})` : `rgba(255, 255, 255, ${activeBgOpacity})`, backdropFilter: `blur(${defaultValues.backgroundBlur !== undefined ? defaultValues.backgroundBlur : 2}px)` }}></div>}
       
       <div className="relative z-10 flex flex-col h-full">
         {licenseStatus && !licenseStatus.isActivated && (

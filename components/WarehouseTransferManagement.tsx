@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { WarehouseTransfer, WarehouseTransferItem, Item, Warehouse, NotificationType, MgmtUser, Unit, SalesInvoice, SalesReturn, PurchaseInvoice, PurchaseReturn } from '../types';
-import { Modal, ConfirmationModal, PlusCircleIcon, DeleteIcon, EditIcon, PrintIcon, ViewIcon, ChevronDownIcon, FormattedNumber, ArchiveIcon, SwitchHorizontalIcon } from './Shared';
+import { Modal, ConfirmationModal, PlusCircleIcon, DeleteIcon, EditIcon, PrintIcon, ViewIcon, ChevronDownIcon, FormattedNumber, ArchiveIcon, SwitchHorizontalIcon, WhatsAppIcon } from './Shared';
 import QuickAddItemModal from './QuickAddItemModal';
 import { searchMatch, formatDateForDisplay } from '../utils';
 import { useDateInput } from '../hooks/useDateInput';
@@ -24,6 +24,7 @@ interface WarehouseTransferManagementProps {
     salesReturns: SalesReturn[];
     purchaseInvoices: PurchaseInvoice[];
     purchaseReturns: PurchaseReturn[];
+    defaultValues: any;
 }
 
 const WarehouseTransferManagement: React.FC<WarehouseTransferManagementProps> = ({
@@ -37,7 +38,7 @@ const WarehouseTransferManagement: React.FC<WarehouseTransferManagementProps> = 
     currentUser,
     draft, setDraft, isEditing, setIsEditing,
     // Added missing props to destructuring
-    salesInvoices, salesReturns, purchaseInvoices, purchaseReturns
+    salesInvoices, salesReturns, purchaseInvoices, purchaseReturns, defaultValues
 }) => {
     
     const getNextTransferId = () => {
@@ -509,6 +510,12 @@ const WarehouseTransferManagement: React.FC<WarehouseTransferManagementProps> = 
                                                 <button onClick={() => handlePrint(t)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors" title="طباعة">
                                                     <PrintIcon />
                                                 </button>
+                                                <button onClick={() => {
+                                                    const fromWh = warehouses.find(w => w.id === t.fromWarehouseId)?.name || '-';
+                                                    const toWh = warehouses.find(w => w.id === t.toWarehouseId)?.name || '-';
+                                                    const text = `إذن تحويل مخزني رقم: ${t.id}%0Aالتاريخ: ${formatDateForDisplay(t.date)}%0Aمن: ${fromWh}%0Aإلى: ${toWh}%0Aعدد الأصناف: ${t.items.length}${defaultValues.whatsappFooter ? '%0A' + encodeURIComponent(defaultValues.whatsappFooter) : ''}`;
+                                                    window.open(`https://wa.me/?text=${text}`, '_blank');
+                                                }} className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors" title="واتساب"><WhatsAppIcon /></button>
                                             </div>
                                         </td>
                                     </tr>

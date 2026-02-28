@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ConfirmationModal, EditIcon, DeleteIcon, ViewIcon, FormattedNumber, ChevronDownIcon } from './Shared';
+import { ConfirmationModal, EditIcon, DeleteIcon, ViewIcon, FormattedNumber, ChevronDownIcon, WhatsAppIcon } from './Shared';
 // consolidated import of DocToView from types
 import type { CustomerReceipt, Customer, Treasury, NotificationType, MgmtUser, SalesInvoice, SalesReturn, DefaultValues, CompanyData, SupplierPayment, Expense, TreasuryTransfer, PurchaseInvoice, PurchaseReturn, DocToView } from '../types';
-import { searchMatch } from '../utils';
+import { searchMatch, formatPhoneNumberForWhatsApp, formatDateForDisplay, formatNumber } from '../utils';
 import { useDateInput } from '../hooks/useDateInput';
 
 import { calculateTreasuryBalance } from '../utils/calculations';
@@ -356,6 +356,12 @@ const CustomerReceiptManagement: React.FC<CustomerReceiptManagementProps> = ({
                                             <div className="flex justify-center gap-2">
                                                 <button onClick={() => handleEdit(r, false)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors" title="تعديل"><EditIcon /></button>
                                                 <button onClick={() => handleEdit(r, true)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors" title="عرض"><ViewIcon /></button>
+                                                <button onClick={() => {
+                                                    const customer = customers.find(c => c.id === r.customerId);
+                                                    const phoneNumber = formatPhoneNumberForWhatsApp(customer?.phone || '');
+                                                    const text = `سند قبض رقم: ${r.id}%0Aالتاريخ: ${formatDateForDisplay(r.date)}%0Aالعميل: ${customer?.name || ''}%0Aالمبلغ: ${formatNumber(r.amount)}${defaultValues.whatsappFooter ? '%0A' + encodeURIComponent(defaultValues.whatsappFooter) : ''}`;
+                                                    window.open(phoneNumber ? `https://wa.me/${phoneNumber}?text=${text}` : `https://wa.me/?text=${text}`, '_blank');
+                                                }} className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors" title="واتساب"><WhatsAppIcon /></button>
                                                 {canDelete && <button onClick={() => handleDelete(r)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors" title="حذف"><DeleteIcon /></button>}
                                             </div>
                                         </td>

@@ -29,7 +29,7 @@ const DefaultValuesComponent: React.FC<DefaultValuesProps> = ({
         if (type === 'checkbox') {
              const checked = (e.target as HTMLInputElement).checked;
              setFormData(prev => ({ ...prev, [name]: checked }));
-        } else if (name === 'backgroundOpacity' || name === 'backgroundBlur') {
+        } else if (['backgroundOpacity', 'backgroundBlur', 'salesInvoiceOpacity', 'purchaseInvoiceOpacity', 'salesReturnOpacity', 'purchaseReturnOpacity'].includes(name)) {
              setFormData(prev => ({ ...prev, [name]: parseFloat(value) }));
         } else {
             const isNumeric = ['defaultWarehouseId', 'defaultUnitId', 'defaultSalesRepId', 'defaultTreasuryId'].includes(name);
@@ -37,22 +37,73 @@ const DefaultValuesComponent: React.FC<DefaultValuesProps> = ({
         }
     };
 
-    const handleBgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleBgChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const result = reader.result as string;
-                setFormData(prev => ({ ...prev, backgroundImage: result }));
+                setFormData(prev => ({ ...prev, [fieldName]: result }));
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleRemoveBg = () => {
-        setFormData(prev => ({ ...prev, backgroundImage: '' }));
-        if (bgInputRef.current) bgInputRef.current.value = '';
+    const handleRemoveBg = (fieldName: string) => {
+        setFormData(prev => ({ ...prev, [fieldName]: '' }));
+        const input = document.getElementById(`bg-input-${fieldName}`) as HTMLInputElement;
+        if (input) input.value = '';
     };
+
+    const renderBackgroundUploader = (label: string, fieldName: keyof DefaultValues, opacityFieldName: keyof DefaultValues) => (
+        <div className="space-y-4 border p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+            <label className={labelClass}>{label}</label>
+            <div className="relative group">
+                <div className={`w-full h-32 border-4 border-dashed rounded-xl flex items-center justify-center overflow-hidden bg-white/50 dark:bg-black/20 ${!formData[fieldName] ? 'border-gray-300' : 'border-blue-400'}`}>
+                    {formData[fieldName] ? (
+                        <img src={formData[fieldName] as string} alt={label} className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="text-center text-gray-400">
+                            <UploadIcon />
+                            <p className="mt-2 text-xs">اضغط لاختيار صورة</p>
+                        </div>
+                    )}
+                </div>
+                <input 
+                    type="file" 
+                    id={`bg-input-${fieldName}`}
+                    onChange={(e) => handleBgChange(e, fieldName as string)} 
+                    accept="image/*" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                />
+                
+                {formData[fieldName] && (
+                    <button 
+                        type="button" 
+                        onClick={() => handleRemoveBg(fieldName as string)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors z-10"
+                        title="حذف الخلفية"
+                    >
+                        <DeleteIcon />
+                    </button>
+                )}
+            </div>
+            
+            <div className="space-y-2">
+                <label className="text-xs text-gray-600 dark:text-gray-400">شفافية التعتيم ({Math.round(((formData[opacityFieldName] as number) || 0.6) * 100)}%)</label>
+                <input 
+                    type="range" 
+                    name={opacityFieldName as string} 
+                    min="0" 
+                    max="1" 
+                    step="0.05" 
+                    value={(formData[opacityFieldName] as number) !== undefined ? (formData[opacityFieldName] as number) : 0.6} 
+                    onChange={handleInputChange} 
+                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                />
+            </div>
+        </div>
+    );
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -117,7 +168,7 @@ const DefaultValuesComponent: React.FC<DefaultValuesProps> = ({
                     <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 pt-6 mb-2 border-b border-gray-300 dark:border-gray-600 pb-3">مظهر البرنامج</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-4">
-                            <label className={labelClass}>صورة خلفية البرنامج (اختياري)</label>
+                            <label className={labelClass}>صورة خلفية البرنامج (الرئيسية)</label>
                             <div className="relative group">
                                 <div className={`w-full h-48 border-4 border-dashed rounded-xl flex items-center justify-center overflow-hidden bg-white/50 dark:bg-black/20 ${!formData.backgroundImage ? 'border-gray-300' : 'border-blue-400'}`}>
                                     {formData.backgroundImage ? (
@@ -129,12 +180,12 @@ const DefaultValuesComponent: React.FC<DefaultValuesProps> = ({
                                         </div>
                                     )}
                                 </div>
-                                <input type="file" ref={bgInputRef} onChange={handleBgChange} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                <input type="file" id="bg-input-backgroundImage" onChange={(e) => handleBgChange(e, 'backgroundImage')} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                                 
                                 {formData.backgroundImage && (
                                     <button 
                                         type="button" 
-                                        onClick={handleRemoveBg}
+                                        onClick={() => handleRemoveBg('backgroundImage')}
                                         className="absolute -top-3 -right-3 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-colors z-10"
                                         title="حذف الخلفية"
                                     >
@@ -142,36 +193,47 @@ const DefaultValuesComponent: React.FC<DefaultValuesProps> = ({
                                     </button>
                                 )}
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">ستظهر هذه الصورة كخلفية لجميع شاشات البرنامج بما في ذلك صفحة الدخول.</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">ستظهر هذه الصورة كخلفية لجميع شاشات البرنامج بما في ذلك صفحة الدخول، ما لم يتم تخصيص خلفية لشاشة معينة.</p>
                         </div>
                         <div className="space-y-4">
-                            <label className={labelClass}>شفافية طبقة التعتيم ({Math.round((formData.backgroundOpacity !== undefined ? formData.backgroundOpacity : 0.6) * 100)}%)</label>
-                            <input 
-                                type="range" 
-                                name="backgroundOpacity" 
-                                min="0" 
-                                max="1" 
-                                step="0.05" 
-                                value={formData.backgroundOpacity !== undefined ? formData.backgroundOpacity : 0.6} 
-                                onChange={handleInputChange} 
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                            />
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">تحكم في درجة وضوح الخلفية (كلما زادت النسبة زاد التعتيم).</p>
+                            <div className="space-y-4">
+                                <label className={labelClass}>شفافية طبقة التعتيم ({Math.round((formData.backgroundOpacity !== undefined ? formData.backgroundOpacity : 0.6) * 100)}%)</label>
+                                <input 
+                                    type="range" 
+                                    name="backgroundOpacity" 
+                                    min="0" 
+                                    max="1" 
+                                    step="0.05" 
+                                    value={formData.backgroundOpacity !== undefined ? formData.backgroundOpacity : 0.6} 
+                                    onChange={handleInputChange} 
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                />
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">تحكم في درجة وضوح الخلفية الرئيسية.</p>
+                            </div>
+                            <div className="space-y-4 mt-6">
+                                <label className={labelClass}>تمويه الخلفية ({formData.backgroundBlur !== undefined ? formData.backgroundBlur : 2}px)</label>
+                                <input 
+                                    type="range" 
+                                    name="backgroundBlur" 
+                                    min="0" 
+                                    max="20" 
+                                    step="1" 
+                                    value={formData.backgroundBlur !== undefined ? formData.backgroundBlur : 2} 
+                                    onChange={handleInputChange} 
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                />
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">تحكم في ضبابية الخلفية (0 = صورة حادة).</p>
+                            </div>
                         </div>
-                        <div className="space-y-4">
-                            <label className={labelClass}>تمويه الخلفية ({formData.backgroundBlur !== undefined ? formData.backgroundBlur : 2}px)</label>
-                            <input 
-                                type="range" 
-                                name="backgroundBlur" 
-                                min="0" 
-                                max="20" 
-                                step="1" 
-                                value={formData.backgroundBlur !== undefined ? formData.backgroundBlur : 2} 
-                                onChange={handleInputChange} 
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                            />
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">تحكم في ضبابية الخلفية (0 = صورة حادة).</p>
-                        </div>
+                    </div>
+
+                    <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 pt-6 mb-2 border-b border-gray-300 dark:border-gray-600 pb-3">تخصيص خلفيات الفواتير</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">يمكنك تعيين خلفية مختلفة لكل نوع من الفواتير. في حال عدم تعيين خلفية، سيتم استخدام الخلفية الرئيسية.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {renderBackgroundUploader('فاتورة مبيعات', 'salesInvoiceBackground', 'salesInvoiceOpacity')}
+                        {renderBackgroundUploader('فاتورة مشتريات', 'purchaseInvoiceBackground', 'purchaseInvoiceOpacity')}
+                        {renderBackgroundUploader('مرتجع مبيعات', 'salesReturnBackground', 'salesReturnOpacity')}
+                        {renderBackgroundUploader('مرتجع مشتريات', 'purchaseReturnBackground', 'purchaseReturnOpacity')}
                     </div>
 
                     <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 pt-6 mb-2 border-b border-gray-300 dark:border-gray-600 pb-3">إعدادات التحديث التلقائي</h2>
