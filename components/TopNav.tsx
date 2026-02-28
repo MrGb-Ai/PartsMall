@@ -69,11 +69,14 @@ const TopNav: React.FC<TopNavProps> = ({
         {/* Right side: Logo and Nav items */}
         <div className="flex items-center space-x-4 space-x-reverse">
             <div 
-                className="text-2xl font-extrabold px-4 cursor-pointer text-gray-800 dark:text-white hover:text-blue-600 transition-colors select-none"
+                className="text-2xl font-extrabold px-4 cursor-pointer transition-colors select-none"
                 onClick={() => onNavigate('dashboard')}
                 title="الذهاب للرئيسية"
+                dir="ltr"
             >
-                KY POS
+                <span className="text-blue-700">P</span>
+                <span className="text-red-700">O</span>
+                <span className="text-green-700">S</span>
             </div>
             <nav className="flex items-center space-x-2 space-x-reverse">
                 {filteredMenuItems.map(item => (

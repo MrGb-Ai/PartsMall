@@ -284,8 +284,10 @@ const WarehouseTransferManagement: React.FC<WarehouseTransferManagementProps> = 
                                             </ul>
                                         )}
                                         {currentItemSelection.itemId > 0 && (
-                                            <div className="absolute top-full right-0 text-lg font-black mt-1 text-indigo-700 dark:text-indigo-300">
-                                                الرصيد المتاح حالياً: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span>
+                                            <div className="absolute top-full right-0 text-sm font-black mt-1 whitespace-nowrap z-0">
+                                                <span className="text-red-800 dark:text-red-400">{warehouses.find(w => w.id === newTransfer.fromWarehouseId)?.name}</span>
+                                                <span className="mx-2 text-gray-500">-</span>
+                                                <span className="text-blue-800 dark:text-blue-400">المتاح: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span></span>
                                             </div>
                                         )}
                                     </div>

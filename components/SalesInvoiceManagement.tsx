@@ -375,9 +375,6 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
             const updated = { ...invoiceToSave, id: finalizedId, lastModifiedBy: currentUser.username, lastModifiedAt: new Date().toISOString() };
             setSalesInvoices(prev => prev.map(inv => inv.id === invoiceToSave.id ? updated : inv));
             
-            // Clean up old auto-generated receipt if it exists
-            setCustomerReceipts(prev => prev.filter(r => r.notes !== `سداد فاتورة مبيعات رقم ${invoiceToSave.id}`));
-
             showNotification('edit'); if (printAfterSave) handlePrint(updated);
             window.dispatchEvent(new CustomEvent('logTransaction', { detail: `قام المستخدم ${currentUser.fullName} بتعديل فاتورة مبيعات رقم ${finalizedId} للعميل ${customers.find(c => c.id === invoiceToSave.customerId)?.name || ''}` }));
         } else {
@@ -669,7 +666,7 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
                 <ConfirmationModal 
                     title="تأكيد الحذف" 
                     message={`هل أنت متأكد من حذف الفاتورة رقم ${invoiceToDelete?.id}؟`} 
-                    onConfirm={() => { if (invoiceToDelete) { let upd = [...items]; invoiceToDelete.items.forEach(old => { const idx = upd.findIndex(i => i.id === old.itemId); if (idx > -1) upd[idx] = { ...upd[idx], openingBalance: upd[idx].openingBalance + old.quantity }; }); setItems(upd); setSalesInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete.id)); setCustomerReceipts(prev => prev.filter(r => r.notes !== `سداد فاتورة مبيعات رقم ${invoiceToDelete.id}`)); showNotification('delete'); } setIsDeleteModalOpen(false); setInvoiceToDelete(null); }} 
+                    onConfirm={() => { if (invoiceToDelete) { let upd = [...items]; invoiceToDelete.items.forEach(old => { const idx = upd.findIndex(i => i.id === old.itemId); if (idx > -1) upd[idx] = { ...upd[idx], openingBalance: upd[idx].openingBalance + old.quantity }; }); setItems(upd); setSalesInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete.id)); showNotification('delete'); } setIsDeleteModalOpen(false); setInvoiceToDelete(null); }} 
                     onCancel={() => setIsDeleteModalOpen(false)} 
                     confirmText="حذف" confirmColor="bg-red-600" 
                 />
@@ -809,8 +806,10 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
                                         </ul>
                                     )}
                                     {currentItemSelection.itemId > 0 && (
-                                        <div className="absolute top-full right-0 text-xl font-black mt-1 whitespace-nowrap z-0">
-                                            {warehouses.find(w => w.id === (items.find(i => i.id === currentItemSelection.itemId)?.warehouseId))?.name}: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span>
+                                        <div className="absolute top-full right-0 text-sm font-black mt-1 whitespace-nowrap z-0">
+                                            <span className="text-red-800 dark:text-red-400">{warehouses.find(w => w.id === (items.find(i => i.id === currentItemSelection.itemId)?.warehouseId))?.name}</span>
+                                            <span className="mx-2 text-gray-500">-</span>
+                                            <span className="text-blue-800 dark:text-blue-400">المتاح: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span></span>
                                         </div>
                                     )}
                                 </div>
@@ -874,7 +873,7 @@ const SalesInvoiceManagement: React.FC<SalesInvoiceManagementProps> = ({
                                     <td className="p-2 text-center text-xs font-mono dark:text-gray-300">{itemData.barcode}</td>
                                     <td className="p-2 text-right dark:text-gray-200">{itemData.name}</td>
                                     <td className="p-2 text-center text-xs text-blue-600 dark:text-blue-400">{warehouseName}</td>
-                                    <td className="p-2 text-center text-blue-600">{getAvailableStock(itemData.id) - invItem.quantity}</td>
+                                    <td className="p-2 text-center text-blue-600">{getAvailableStock(itemData.id)}</td>
                                     <td className="p-2 text-center"><input type="number" min="1" value={invItem.quantity} onChange={(e) => handleItemChange(invItem.itemId, 'quantity', +e.target.value)} className="w-full text-center border-2 border-gray-200 rounded font-bold dark:bg-gray-700 dark:text-white" /></td>
                                     <td className="p-2 text-center"><input type="number" min="0" step="0.01" value={invItem.price} onChange={(e) => handleItemChange(invItem.itemId, 'price', +e.target.value)} className="w-full text-center border-2 border-gray-200 rounded font-bold dark:bg-gray-700 dark:text-white" /></td>
                                     <td className="p-2 text-center text-green-600"><FormattedNumber value={invItem.quantity * invItem.price} /></td>

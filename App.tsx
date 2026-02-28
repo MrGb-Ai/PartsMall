@@ -483,7 +483,7 @@ const App: React.FC = () => {
         {licenseStatus && !licenseStatus.isActivated && (
             <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-black flex justify-between items-center px-4 py-1 z-50 text-sm font-bold print:hidden">
                 <span>نسخة تجريبية - متبقي {licenseStatus.daysRemaining} يوم</span>
-                <span>© {new Date().getFullYear()} جميع الحقوق محفوظة لـ ProDev Solutions</span>
+                <span>© {new Date().getFullYear()} جميع الحقوق محفوظة لـ ETQAN Solutions</span>
             </div>
         )}
         <TopNav onNavigate={(view) => { if(view === 'settingsActivation') setShowManualActivation(true); else setCurrentView(view); }} currentUser={currentUser} licenseStatus={licenseStatus} user={currentUser.fullName} onLogout={handleLogout} theme={theme} onThemeChange={setTheme} currentViewLabel={currentViewLabel} isCloudConnected={isCloudConnected} updateAvailable={updateAvailable} firebaseConfig={firebaseConfig} isDBReady={isDBReady} />

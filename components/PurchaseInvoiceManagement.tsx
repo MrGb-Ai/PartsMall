@@ -234,11 +234,14 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
     const openDropdown = (type: 'item' | 'supplier' | 'warehouse') => { closeAllDropdowns(); if (type === 'item') setIsItemSuggestionsOpen(true); if (type === 'supplier') setIsSupplierSuggestionsOpen(true); if (type === 'warehouse') setIsWarehouseSuggestionsOpen(true); };
 
     const suggestedItems = useMemo(() => {
-        const unselectedItems = items.filter(item => !newInvoice.items.some(invItem => invItem.itemId === item.id));
+        const unselectedItems = items.filter(item => 
+            !newInvoice.items.some(invItem => invItem.itemId === item.id) &&
+            item.warehouseId === newInvoice.warehouseId
+        );
         let results = unselectedItems;
         if (itemSearchQuery) results = unselectedItems.filter(item => item.barcode === itemSearchQuery.trim() || searchMatch(item.name, itemSearchQuery));
         return results.sort((a, b) => a.name.localeCompare(b.name, 'ar')).slice(0, 20);
-    }, [itemSearchQuery, items, newInvoice.items]);
+    }, [itemSearchQuery, items, newInvoice.items, newInvoice.warehouseId]);
 
     const suggestedSuppliers = useMemo(() => {
         if (!supplierSearchQuery) return suppliers;
@@ -646,6 +649,13 @@ const PurchaseInvoiceManagement: React.FC<PurchaseInvoiceManagementProps> = ({
                                             </li>
                                         ))}
                                     </ul>
+                                )}
+                                {currentItemSelection.itemId > 0 && (
+                                    <div className="absolute top-full right-0 text-sm font-black mt-1 whitespace-nowrap z-0">
+                                        <span className="text-red-800 dark:text-red-400">{warehouses.find(w => w.id === (items.find(i => i.id === currentItemSelection.itemId)?.warehouseId))?.name}</span>
+                                        <span className="mx-2 text-gray-500">-</span>
+                                        <span className="text-blue-800 dark:text-blue-400">المتاح: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span></span>
+                                    </div>
                                 )}
                             </div>
                             <div className="md:col-span-1"><div className="h-6"></div><button onClick={() => setIsQuickAddItemModalOpen(true)} className="w-full bg-orange-500 text-white font-bold rounded-lg h-11 shadow-md hover:bg-orange-600 transition-all text-xl">+</button></div>

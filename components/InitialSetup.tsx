@@ -131,9 +131,9 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onChoice }) => {
                             <span>يمكنك التغيير لاحقاً من الإعدادات</span>
                         </div>
                         <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                        <span>الإصدار 1.0.7</span>
+                        <span>الإصدار 1.2.7</span>
                         <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                        <span>بواسطة ProDev Solutions</span>
+                        <span>بواسطة ETQAN Solutions</span>
                     </div>
                 </div>
             </motion.div>

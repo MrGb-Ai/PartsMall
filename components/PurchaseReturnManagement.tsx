@@ -688,8 +688,10 @@ const PurchaseReturnManagement: React.FC<PurchaseReturnManagementProps> = ({
                                         </ul>
                                     )}
                                     {currentItemSelection.itemId > 0 && (
-                                        <div className="absolute top-full right-0 text-xl font-black mt-1 whitespace-nowrap text-blue-800 dark:text-blue-300">
-                                            {warehouses.find(w => w.id === (items.find(i => i.id === currentItemSelection.itemId)?.warehouseId))?.name}: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span>
+                                        <div className="absolute top-full right-0 text-sm font-black mt-1 whitespace-nowrap z-0">
+                                            <span className="text-red-800 dark:text-red-400">{warehouses.find(w => w.id === (items.find(i => i.id === currentItemSelection.itemId)?.warehouseId))?.name}</span>
+                                            <span className="mx-2 text-gray-500">-</span>
+                                            <span className="text-blue-800 dark:text-blue-400">المتاح: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span></span>
                                         </div>
                                     )}
                                 </div>
@@ -751,7 +753,7 @@ const PurchaseReturnManagement: React.FC<PurchaseReturnManagementProps> = ({
                                 <tr key={invItem.itemId} className="border-b hover:bg-red-50/30 transition-colors text-sm font-bold">
                                     <td className="p-2 text-center text-xs font-mono dark:text-gray-300">{itemData.barcode}</td>
                                     <td className="p-2 text-right dark:text-gray-200">{itemData.name}</td>
-                                    <td className="p-2 text-center text-blue-600">{getAvailableStock(itemData.id) - invItem.quantity}</td>
+                                    <td className="p-2 text-center text-blue-600">{getAvailableStock(itemData.id)}</td>
                                     <td className="p-2 text-center">
                                         {!isViewing ? (
                                             <input type="number" min="1" value={invItem.quantity} onChange={(e) => handleItemChange(invItem.itemId, 'quantity', +e.target.value)} className="w-full text-center border-2 border-gray-200 rounded font-bold dark:bg-gray-700 dark:text-white" />

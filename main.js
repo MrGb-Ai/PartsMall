@@ -12,7 +12,7 @@ function createWindow() {
     height: 800,
     minWidth: 1100,
     minHeight: 700,
-    title: 'نظام KY POS المتكامل',
+    title: 'نظام POS المتكامل',
     show: false,
     backgroundColor: '#ffffff',
     webPreferences: {

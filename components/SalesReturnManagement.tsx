@@ -634,8 +634,10 @@ const SalesReturnManagement: React.FC<SalesReturnManagementProps> = ({
                                         </ul>
                                     )}
                                     {currentItemSelection.itemId > 0 && (
-                                        <div className="absolute top-full right-0 text-xl font-black mt-1 whitespace-nowrap text-blue-800 dark:text-blue-300">
-                                            {warehouses.find(w => w.id === (items.find(i => i.id === currentItemSelection.itemId)?.warehouseId))?.name}: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span>
+                                        <div className="absolute top-full right-0 text-sm font-black mt-1 whitespace-nowrap z-0">
+                                            <span className="text-red-800 dark:text-red-400">{warehouses.find(w => w.id === (items.find(i => i.id === currentItemSelection.itemId)?.warehouseId))?.name}</span>
+                                            <span className="mx-2 text-gray-500">-</span>
+                                            <span className="text-blue-800 dark:text-blue-400">المتاح: <span className="font-mono">{getAvailableStock(currentItemSelection.itemId)}</span></span>
                                         </div>
                                     )}
                                 </div>
