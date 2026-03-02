@@ -236,6 +236,35 @@ const DefaultValuesComponent: React.FC<DefaultValuesProps> = ({
                         {renderBackgroundUploader('مرتجع مشتريات', 'purchaseReturnBackground', 'purchaseReturnOpacity')}
                     </div>
 
+                    <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 pt-6 mb-2 border-b border-gray-300 dark:border-gray-600 pb-3">تخصيص الشات</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className={labelClass}>لون ثيم الشات</label>
+                            <div className="flex flex-wrap gap-3 mb-3">
+                                {['#008069', '#0f172a', '#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981'].map(color => (
+                                    <button
+                                        key={color}
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, chatThemeColor: color }))}
+                                        className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${formData.chatThemeColor === color ? 'border-white ring-2 ring-blue-500 scale-110' : 'border-transparent'}`}
+                                        style={{ backgroundColor: color }}
+                                        title={color}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <input 
+                                    type="color" 
+                                    name="chatThemeColor" 
+                                    value={formData.chatThemeColor || '#008069'} 
+                                    onChange={handleInputChange} 
+                                    className="h-10 w-20 rounded cursor-pointer"
+                                />
+                                <span className="text-sm text-gray-600 dark:text-gray-400">أو اختر لوناً مخصصاً</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 pt-6 mb-2 border-b border-gray-300 dark:border-gray-600 pb-3">إعدادات التحديث التلقائي</h2>
                     <div className="grid grid-cols-1 gap-4">
                         <div>

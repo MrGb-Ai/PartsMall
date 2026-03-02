@@ -42,7 +42,32 @@ export interface MgmtUser {
 export interface DatabaseProfile { id: string; name: string; }
 export interface FirebaseConfig { apiKey: string; authDomain: string; databaseURL: string; projectId: string; storageBucket: string; messagingSenderId: string; appId: string; }
 export interface CompanyData { name: string; cr: string; tr: string; phone1: string; phone2: string; address: string; logo?: string; }
-export interface DefaultValues { defaultWarehouseId: number; defaultUnitId: number; defaultSalesRepId: number; defaultTreasuryId: number; defaultPaymentMethodInvoices: 'cash' | 'credit'; defaultPaymentMethodReceipts: 'cash' | 'check' | 'discount'; invoiceFooter: string; whatsappFooter: string; enableBackupAlert: boolean; useSystemPicker?: boolean; backgroundImage?: string; githubRepo?: string; }
+export interface DefaultValues { 
+    defaultWarehouseId: number; 
+    defaultUnitId: number; 
+    defaultSalesRepId: number; 
+    defaultTreasuryId: number; 
+    defaultPaymentMethodInvoices: 'cash' | 'credit'; 
+    defaultPaymentMethodReceipts: 'cash' | 'check' | 'discount'; 
+    invoiceFooter: string; 
+    whatsappFooter: string; 
+    enableBackupAlert: boolean; 
+    useSystemPicker?: boolean; 
+    backgroundImage?: string; 
+    backgroundOpacity?: number; 
+    backgroundBlur?: number; 
+    githubRepo?: string;
+    
+    // Per-screen backgrounds
+    salesInvoiceBackground?: string;
+    salesInvoiceOpacity?: number;
+    purchaseInvoiceBackground?: string;
+    purchaseInvoiceOpacity?: number;
+    salesReturnBackground?: string;
+    salesReturnOpacity?: number;
+    purchaseReturnBackground?: string;
+    purchaseReturnOpacity?: number;
+}
 export interface Warehouse { id: number; code: string; name: string; keeper: string; phone: string; address: string; notes: string; createdAt?: string; createdBy?: string; lastModifiedAt?: string; lastModifiedBy?: string; }
 export interface Unit { id: number; name: string; description: string; createdAt?: string; createdBy?: string; lastModifiedAt?: string; lastModifiedBy?: string; }
 export interface Treasury { id: number; name: string; keeper: string; openingBalance: number; createdAt?: string; createdBy?: string; lastModifiedAt?: string; lastModifiedBy?: string; }
@@ -84,6 +109,7 @@ export interface SavedImport {
   supplierId?: number;
   entryDate?: string;
   warehouseId: number;
+  invoiceType?: 'cash' | 'credit';
   status: 'draft' | 'synced';
   linkedPurchaseInvoiceId?: number | string;
   usdToRmb: number;
@@ -98,7 +124,42 @@ export interface SavedImport {
   items: ImportItem[];
 }
 
-export interface AppBackupData { users?: MgmtUser[]; companyData?: CompanyData; warehouses?: Warehouse[]; units?: Unit[]; items?: Item[]; treasuries?: Treasury[]; expenseCategories?: ExpenseCategory[]; expenses?: Expense[]; customers?: Customer[]; customerReceipts?: CustomerReceipt[]; salesRepresentatives?: SalesRepresentative[]; suppliers?: Supplier[]; supplierPayments?: SupplierPayment[]; salesInvoices?: SalesInvoice[]; salesReturns?: SalesReturn[]; purchaseInvoices?: PurchaseInvoice[]; purchaseReturns?: PurchaseReturn[]; warehouseTransfers?: WarehouseTransfer[]; treasuryTransfers?: TreasuryTransfer[]; defaultValues?: DefaultValues; activeDiscounts?: Record<number, number>; selectedDiscountItems?: StorableDiscountItem[]; importCalculatorHistory?: SavedImport[]; }
+export interface AttendanceRecord {
+  id: number;
+  employeeId: number;
+  date: string; // YYYY-MM-DD
+  checkInTime: string | null; // HH:mm
+  checkOutTime: string | null; // HH:mm
+  status: 'present' | 'absent' | 'late' | 'excused' | 'vacation';
+  notes: string;
+  dataSource?: 'manual' | 'excel' | 'device';
+  createdAt?: string;
+  createdBy?: string;
+  lastModifiedAt?: string;
+  lastModifiedBy?: string;
+}
+
+export interface SalaryRecord {
+  id: number;
+  employeeId: number;
+  month: string; // YYYY-MM
+  basicSalary: number;
+  workingDays: number;
+  lates: number; // Amount deducted for lates
+  overtime: number; // Amount added for overtime
+  commission: number; // Sales commission
+  deductions: number; // Other deductions
+  bonuses: number; // Other bonuses
+  netSalary: number;
+  isPaid: boolean;
+  notes?: string;
+  createdAt?: string;
+  createdBy?: string;
+  lastModifiedAt?: string;
+  lastModifiedBy?: string;
+}
+
+export interface AppBackupData { users?: MgmtUser[]; companyData?: CompanyData; warehouses?: Warehouse[]; units?: Unit[]; items?: Item[]; treasuries?: Treasury[]; expenseCategories?: ExpenseCategory[]; expenses?: Expense[]; customers?: Customer[]; customerReceipts?: CustomerReceipt[]; salesRepresentatives?: SalesRepresentative[]; suppliers?: Supplier[]; supplierPayments?: SupplierPayment[]; salesInvoices?: SalesInvoice[]; salesReturns?: SalesReturn[]; purchaseInvoices?: PurchaseInvoice[]; purchaseReturns?: PurchaseReturn[]; warehouseTransfers?: WarehouseTransfer[]; treasuryTransfers?: TreasuryTransfer[]; defaultValues?: DefaultValues; activeDiscounts?: Record<number, number>; selectedDiscountItems?: StorableDiscountItem[]; importCalculatorHistory?: SavedImport[]; attendanceRecords?: AttendanceRecord[]; salaryRecords?: SalaryRecord[]; }
 export type NotificationType = 'add' | 'save' | 'edit' | 'delete' | 'error';
 
 export type DocToView = { view: string; docId: number | string } | null;
@@ -108,11 +169,21 @@ export type DayOfWeek = 'Saturday' | 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesda
 
 export interface Employee {
   id: number;
+  code: string;
   name: string;
+  phone: string;
+  nationalId: string;
+  address: string;
   jobTitle: string;
   departmentId: number;
   salary: number;
   vacationDays: DayOfWeek[];
+  scheduledCheckInTime?: string;
+  scheduledCheckOutTime?: string;
+  workingHoursPerDay?: number;
+  commissionType?: 'none' | 'percentage' | 'per_item';
+  commissionValue?: number;
+  isBlocked?: boolean;
   createdAt?: string;
   createdBy?: string;
   lastModifiedAt?: string;
@@ -121,6 +192,7 @@ export interface Employee {
 
 export interface Department {
   id: number;
+  code?: string;
   name: string;
   createdAt?: string;
   createdBy?: string;
@@ -143,4 +215,9 @@ export interface ChatMessage {
     audioData?: string; // Base64 encoded audio
     isCall?: boolean; // Indicates if this is a call notification
     isEdited?: boolean; // Indicates if the message was edited
+    attachment?: {
+        type: 'image' | 'file';
+        url: string; // Base64 or URL
+        name: string;
+    };
 }

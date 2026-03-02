@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.43.0",
+    "emoji-picker-react": "^4.18.0",
     "firebase": "^10.8.0",
     "framer-motion": "^12.34.3",
     "html2canvas": "^1.4.1",

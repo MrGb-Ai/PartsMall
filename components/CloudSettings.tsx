@@ -145,7 +145,21 @@ const CloudSettings: React.FC<CloudSettingsProps> = ({ firebaseConfig, setFireba
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setFirebaseConfig(formData);
+        
+        // Basic sanitization before saving
+        const sanitizedData = { ...formData };
+        if (sanitizedData.databaseURL) {
+            let url = sanitizedData.databaseURL.trim();
+            if (!url.match(/^https?:\/\//)) {
+                url = `https://${url}`;
+            }
+            if (url.endsWith('/')) {
+                url = url.slice(0, -1);
+            }
+            sanitizedData.databaseURL = url;
+        }
+
+        setFirebaseConfig(sanitizedData);
         showNotification('save');
         setTimeout(() => window.location.reload(), 1500);
     };

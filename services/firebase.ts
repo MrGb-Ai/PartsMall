@@ -21,12 +21,29 @@ export const initFirebase = (config: FirebaseConfig, onConnectionStatusChange: (
     }
 
     const sanitizedConfig = { ...config };
+    
+    // Robust databaseURL sanitization
     if (sanitizedConfig.databaseURL) {
+        let url = sanitizedConfig.databaseURL.trim();
+        
+        // Ensure protocol
+        if (!url.match(/^https?:\/\//)) {
+            url = `https://${url}`;
+        }
+        
+        // Remove trailing slashes
+        if (url.endsWith('/')) {
+            url = url.slice(0, -1);
+        }
+
         try {
-            const urlObj = new URL(sanitizedConfig.databaseURL);
-            sanitizedConfig.databaseURL = `${urlObj.protocol}//${urlObj.hostname}`;
+            const urlObj = new URL(url);
+            // Ensure it's just the origin (protocol + hostname) or full path if needed
+            // For Firebase RTDB, it's usually https://<project>.firebaseio.com
+            sanitizedConfig.databaseURL = urlObj.origin; 
         } catch (e) {
-            console.warn("Invalid database URL format, using as is:", sanitizedConfig.databaseURL);
+            console.warn("Could not parse databaseURL, using sanitized string:", url);
+            sanitizedConfig.databaseURL = url;
         }
     }
 

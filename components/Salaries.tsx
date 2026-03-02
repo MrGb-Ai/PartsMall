@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Employee, AttendanceRecord, SalaryRecord, MgmtUser, SalesInvoice, SalesReturn, SalesRepresentative, Department } from '../types';
-import { SaveIcon, CalendarIcon, DollarSignIcon, FileTextIcon, PrinterIcon, EyeIcon, EyeOffIcon, SearchIcon, XIcon } from 'lucide-react';
+import { SaveIcon, DollarSignIcon, PrinterIcon } from 'lucide-react';
 
 interface SalariesProps {
   employees: Employee[];
@@ -20,34 +20,6 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
   );
   const [currentRecords, setCurrentRecords] = useState<Record<number, Partial<SalaryRecord>>>({});
   const [isSaving, setIsSaving] = useState(false);
-
-  // Attendance Log State
-  const [showAttendanceLog, setShowAttendanceLog] = useState(false);
-  const [searchEmpCode, setSearchEmpCode] = useState('');
-  const [searchEmpName, setSearchEmpName] = useState('');
-  const [searchDateFrom, setSearchDateFrom] = useState('');
-  const [searchDateTo, setSearchDateTo] = useState('');
-
-  const filteredAttendance = useMemo(() => {
-    return attendanceRecords.filter(record => {
-      const emp = employees.find(e => e.id === record.employeeId);
-      if (!emp) return false;
-      
-      const matchCode = searchEmpCode ? (emp.code || '').toLowerCase().includes(searchEmpCode.toLowerCase()) : true;
-      const matchName = searchEmpName ? (emp.name || '').toLowerCase().includes(searchEmpName.toLowerCase()) : true;
-      const matchDateFrom = searchDateFrom ? record.date >= searchDateFrom : true;
-      const matchDateTo = searchDateTo ? record.date <= searchDateTo : true;
-      
-      return matchCode && matchName && matchDateFrom && matchDateTo;
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [attendanceRecords, employees, searchEmpCode, searchEmpName, searchDateFrom, searchDateTo]);
-
-  const clearFilters = () => {
-    setSearchEmpCode('');
-    setSearchEmpName('');
-    setSearchDateFrom('');
-    setSearchDateTo('');
-  };
 
   // Initialize records for the selected month
   useEffect(() => {
@@ -296,142 +268,23 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
       <div className="w-full bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white">جدول المرتبات</h2>
-          <button
-            onClick={() => setShowAttendanceLog(!showAttendanceLog)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors font-bold text-sm"
-          >
-            {showAttendanceLog ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-            <span>{showAttendanceLog ? 'إخفاء سجل الحضور والانصراف' : 'إظهار سجل الحضور والانصراف'}</span>
-          </button>
         </div>
 
-        {showAttendanceLog && (
-          <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex flex-col gap-4">
-              <h3 className="font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5" />
-                سجل الحضور والانصراف
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">كود الموظف</label>
-                  <input
-                    type="text"
-                    value={searchEmpCode}
-                    onChange={(e) => setSearchEmpCode(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                    placeholder="بحث بالكود..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">اسم الموظف</label>
-                  <input
-                    type="text"
-                    value={searchEmpName}
-                    onChange={(e) => setSearchEmpName(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                    placeholder="بحث بالاسم..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">التاريخ من</label>
-                  <input
-                    type="date"
-                    value={searchDateFrom}
-                    onChange={(e) => setSearchDateFrom(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">التاريخ إلى</label>
-                  <input
-                    type="date"
-                    value={searchDateTo}
-                    onChange={(e) => setSearchDateTo(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={clearFilters}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-bold text-sm"
-                  >
-                    <XIcon className="w-4 h-4" />
-                    <span>تفريغ الحقول</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-4 max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="w-full text-right border-collapse">
-                  <thead className="bg-white dark:bg-gray-800 sticky top-0 shadow-sm">
-                    <tr>
-                      <th className="p-3 font-bold text-gray-700 dark:text-gray-300 text-sm">التاريخ</th>
-                      <th className="p-3 font-bold text-gray-700 dark:text-gray-300 text-sm">كود الموظف</th>
-                      <th className="p-3 font-bold text-gray-700 dark:text-gray-300 text-sm">اسم الموظف</th>
-                      <th className="p-3 font-bold text-gray-700 dark:text-gray-300 text-sm">الحضور</th>
-                      <th className="p-3 font-bold text-gray-700 dark:text-gray-300 text-sm">الانصراف</th>
-                      <th className="p-3 font-bold text-gray-700 dark:text-gray-300 text-sm">الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAttendance.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="p-6 text-center text-gray-500 dark:text-gray-400">
-                          لا توجد سجلات مطابقة للبحث
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredAttendance.map(record => {
-                        const emp = employees.find(e => e.id === record.employeeId);
-                        return (
-                          <tr key={record.id} className="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td className="p-3 text-sm text-gray-800 dark:text-gray-200 font-mono">{record.date}</td>
-                            <td className="p-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{emp?.code || '-'}</td>
-                            <td className="p-3 text-sm font-bold text-gray-800 dark:text-gray-200">{emp?.name || '-'}</td>
-                            <td className="p-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{record.checkInTime || '-'}</td>
-                            <td className="p-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{record.checkOutTime || '-'}</td>
-                            <td className="p-3 text-sm">
-                              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                record.status === 'present' ? 'bg-green-100 text-green-800' :
-                                record.status === 'absent' ? 'bg-red-100 text-red-800' :
-                                record.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
-                                record.status === 'excused' ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {record.status === 'present' ? 'حضور' :
-                                 record.status === 'absent' ? 'غياب' :
-                                 record.status === 'late' ? 'تأخير' :
-                                 record.status === 'excused' ? 'إذن' : 'إجازة'}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="overflow-x-auto">
-          <table className="w-full text-right border-collapse">
+          <table className="w-full text-right border-collapse table-fixed">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">كود الموظف</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">اسم الموظف</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">الراتب الأساسي</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">أيام العمل</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">الراتب لأيام العمل</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-28">تأخيرات</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-28">إضافي</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-28">عمولة مبيعات</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-28">خصم</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-28">مكافآت</th>
-                <th className="p-4 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap bg-green-50 dark:bg-green-900/20">صافي المرتب</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">كود الموظف</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap w-2/12 text-xs">اسم الموظف</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">الراتب الأساسي</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">أيام العمل</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">الراتب المستحق</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">تأخيرات</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">إضافي</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">عمولة مبيعات</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">خصم</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 text-xs">مكافآت</th>
+                <th className="p-2 font-bold text-gray-700 dark:text-gray-300 text-center whitespace-nowrap w-1/12 bg-green-50 dark:bg-green-900/20 text-xs">صافي المرتب</th>
               </tr>
             </thead>
             <tbody>
@@ -489,18 +342,18 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
                   return (
                     <React.Fragment key={emp.id}>
                       <tr className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td className="p-4 text-center font-mono text-gray-600 dark:text-gray-400">{emp.code || '-'}</td>
-                        <td className="p-4">
-                          <div className="font-bold text-gray-800 dark:text-gray-200">{emp.name}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{emp.jobTitle}</div>
+                        <td className="p-2 text-center font-mono text-gray-600 dark:text-gray-400 text-xs">{emp.code || '-'}</td>
+                        <td className="p-2">
+                          <div className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate" title={emp.name}>{emp.name}</div>
+                          <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5 truncate">{emp.jobTitle}</div>
                         </td>
-                        <td className="p-4 text-center font-bold text-gray-700 dark:text-gray-300">
+                        <td className="p-2 text-center font-bold text-gray-700 dark:text-gray-300 text-xs">
                           {emp.salary?.toLocaleString() || 0}
                         </td>
-                        <td className="p-4 text-center font-bold text-gray-700 dark:text-gray-300">
+                        <td className="p-2 text-center font-bold text-gray-700 dark:text-gray-300 text-xs">
                           {record.workingDays || 0}
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-2 text-center">
                           <input 
                             type="number" 
                             value={record.basicSalary || 0} 
@@ -509,7 +362,7 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
                             min="0"
                           />
                         </td>
-                        <td className="p-4 text-center relative group">
+                        <td className="p-2 text-center relative group">
                           <input 
                             type="number" 
                             value={record.lates || 0} 
@@ -518,12 +371,12 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
                             min="0"
                           />
                           {totalLateMinutes > 0 && (
-                            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm" title={`إجمالي التأخير: ${formatMinutes(totalLateMinutes)}`}>
+                            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm z-10" title={`إجمالي التأخير: ${formatMinutes(totalLateMinutes)}`}>
                               {formatMinutes(totalLateMinutes)}
                             </div>
                           )}
                         </td>
-                        <td className="p-4 text-center relative group">
+                        <td className="p-2 text-center relative group">
                           <input 
                             type="number" 
                             value={record.overtime || 0} 
@@ -532,12 +385,12 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
                             min="0"
                           />
                           {totalOvertimeMinutes > 0 && (
-                            <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm" title={`إجمالي الإضافي: ${formatMinutes(totalOvertimeMinutes)}`}>
+                            <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm z-10" title={`إجمالي الإضافي: ${formatMinutes(totalOvertimeMinutes)}`}>
                               {formatMinutes(totalOvertimeMinutes)}
                             </div>
                           )}
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-2 text-center">
                           <input 
                             type="number" 
                             value={record.commission || 0} 
@@ -546,7 +399,7 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
                             min="0"
                           />
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-2 text-center">
                           <input 
                             type="number" 
                             value={record.deductions || 0} 
@@ -555,7 +408,7 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
                             min="0"
                           />
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-2 text-center">
                           <input 
                             type="number" 
                             value={record.bonuses || 0} 
@@ -564,7 +417,7 @@ const Salaries: React.FC<SalariesProps> = ({ employees, attendanceRecords, salar
                             min="0"
                           />
                         </td>
-                        <td className="p-4 text-center bg-green-50 dark:bg-green-900/20 font-black text-lg text-green-700 dark:text-green-300">
+                        <td className="p-2 text-center bg-green-50 dark:bg-green-900/20 font-black text-sm text-green-700 dark:text-green-300">
                           {record.netSalary?.toLocaleString()}
                         </td>
                       </tr>

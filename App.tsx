@@ -505,7 +505,7 @@ const App: React.FC = () => {
                     transparent={!!defaultValues.backgroundImage}
                 />
             </div>
-            <Chat currentUser={null} departments={departments} chatMessages={chatMessages} setChatMessages={setChatMessages} isLoginScreen={true} />
+            <Chat currentUser={null} departments={departments} chatMessages={chatMessages} setChatMessages={setChatMessages} isLoginScreen={true} themeColor={defaultValues.chatThemeColor} />
         </div>
     );
   }
@@ -526,7 +526,7 @@ const App: React.FC = () => {
             {notification && <ActionFeedback type={notification} />} 
             {renderCurrentView()}
         </main>
-        <Chat currentUser={currentUser!} departments={departments} chatMessages={chatMessages} setChatMessages={setChatMessages} />
+        <Chat currentUser={currentUser!} departments={departments} chatMessages={chatMessages} setChatMessages={setChatMessages} themeColor={defaultValues.chatThemeColor} />
         {isLogoutModalOpen && (
             <Modal show={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} title="تنبيه قبل الخروج">
                 <div className="p-6 text-center">
