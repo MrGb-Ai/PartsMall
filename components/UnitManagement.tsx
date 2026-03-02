@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ConfirmationModal, EditIcon, DeleteIcon, ViewIcon } from './Shared';
+import { Modal, ConfirmationModal, EditIcon, DeleteIcon, ViewIcon, PlusCircleIcon } from './Shared';
 import type { Unit, Item, NotificationType, MgmtUser } from '../types';
 
 interface UnitManagementProps {
@@ -16,6 +16,7 @@ const UnitManagement: React.FC<UnitManagementProps> = ({ units, setUnits, items,
     const [formData, setFormData] = useState<Omit<Unit, 'id' | 'createdBy' | 'createdAt'> & { id: number | null }>({ id: null, name: '', description: '' });
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [isViewing, setIsViewing] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
 
@@ -66,7 +67,7 @@ const UnitManagement: React.FC<UnitManagementProps> = ({ units, setUnits, items,
         setIsEditing(true);
         setIsViewing(viewOnly);
         setFormData(unit);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsModalOpen(true);
     };
 
     const handleDelete = (unit: Unit) => {
@@ -96,6 +97,7 @@ const UnitManagement: React.FC<UnitManagementProps> = ({ units, setUnits, items,
         setIsEditing(false);
         setIsViewing(false);
         setFormData({ id: null, name: '', description: '' });
+        setIsModalOpen(false);
     }
 
     const inputClass = "h-11 w-full px-4 py-2 bg-black/5 dark:bg-white/5 rounded-lg shadow-[inset_3px_3px_7px_rgba(0,0,0,0.2)] focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed";
@@ -113,32 +115,44 @@ const UnitManagement: React.FC<UnitManagementProps> = ({ units, setUnits, items,
                     confirmColor="bg-red-600"
                 />
             )}
+            <Modal
+                title={isViewing ? 'عرض بيانات الوحدة' : isEditing ? 'تعديل بيانات الوحدة' : 'إضافة وحدة جديدة'}
+                show={isModalOpen}
+                onClose={resetForm}
+            >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass} htmlFor="name">
+                                اسم الوحدة
+                                <span className="text-red-500 dark:text-red-400 font-normal text-sm mr-1">(مطلوب)</span>
+                            </label>
+                            <input id="name" name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} />
+                        </div>
+                        <div>
+                            <label className={labelClass} htmlFor="description">الوصف</label>
+                            <input id="description" name="description" type="text" value={formData.description} onChange={handleInputChange} className={inputClass} disabled={isViewing} />
+                        </div>
+                    </div>
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                        {!isViewing && (
+                            <button type="submit" className="w-full bg-blue-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                                <PlusCircleIcon className="h-5 w-5" />
+                                <span>{isEditing ? 'تحديث الوحدة' : 'إضافة وحدة'}</span>
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </Modal>
             <div className="space-y-8">
-                 <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">تكويد الوحدات</h1>
                 <div className="bg-white/30 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/40 dark:bg-gray-700/30 dark:border-white/20">
-                    <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-6">{isViewing ? 'عرض بيانات الوحدة' : isEditing ? 'تعديل بيانات الوحدة' : 'إضافة وحدة جديدة'}</h2>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelClass} htmlFor="name">
-                                    اسم الوحدة
-                                    <span className="text-red-500 dark:text-red-400 font-normal text-sm mr-1">(مطلوب)</span>
-                                </label>
-                                <input id="name" name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} />
-                            </div>
-                            <div>
-                                <label className={labelClass} htmlFor="description">الوصف</label>
-                                <input id="description" name="description" type="text" value={formData.description} onChange={handleInputChange} className={inputClass} disabled={isViewing} />
-                            </div>
-                        </div>
-                        <div className="flex justify-end space-x-4 space-x-reverse pt-4">
-                           {isEditing && (<button type="button" onClick={resetForm} className="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-300 transform hover:-translate-y-1 transition-all duration-300">إلغاء</button>)}
-                           {!isViewing && <button type="submit" className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transform hover:-translate-y-1 transition-all duration-300">{isEditing ? 'تحديث الوحدة' : 'إضافة وحدة'}</button>}
-                        </div>
-                    </form>
-                </div>
-                <div className="bg-white/30 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/40 dark:bg-gray-700/30 dark:border-white/20">
-                     <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-4">قائمة الوحدات</h2>
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                        <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300">سجل الوحدات</h2>
+                        <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <PlusCircleIcon className="h-5 w-5" />
+                            <span>إضافة وحدة جديدة</span>
+                        </button>
+                    </div>
                      <div className="overflow-x-auto">
                         <table className="w-full text-right">
                             <thead className="border-b-2 border-gray-300 dark:border-gray-600">

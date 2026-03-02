@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Cloud, Database, ArrowLeftRight, Sparkles, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
 
 interface InitialSetupProps {
-    onChoice: (choice: 'cloud' | 'local') => void;
+    onChoice: (choice: 'cloud' | 'local' | 'restore') => void;
 }
 
 const InitialSetup: React.FC<InitialSetupProps> = ({ onChoice }) => {
@@ -34,92 +34,82 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onChoice }) => {
                     </motion.div>
                     
                     <h1 className="text-5xl md:text-7xl font-black text-slate-900 mb-6 tracking-tight leading-tight">
-                        لنقم بتهيئة <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-emerald-600">نظامك الجديد</span>
+                        مرحباً بك في <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-emerald-600">النظام</span>
                     </h1>
                     
-                    <p className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
-                        خطوة واحدة تفصلك عن إدارة أعمالك باحترافية. اختر الطريقة التي تناسب احتياجاتك للبدء.
+                    <p className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-bold">
+                        يرجى اختيار طريقة بدء النظام.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    {/* Cloud Option */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Local Option */}
                     <motion.div
-                        whileHover={{ y: -10, transition: { duration: 0.3 } }}
-                        className="group relative p-10 rounded-[2.5rem] bg-white border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-200/40 transition-all duration-500 cursor-pointer overflow-hidden"
-                        onClick={() => onChoice('cloud')}
+                        whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                        className="group relative p-8 rounded-3xl bg-[#f0fdf4] border border-emerald-100 shadow-lg hover:shadow-xl hover:shadow-emerald-100 transition-all duration-300 cursor-pointer flex flex-col items-center text-center"
+                        onClick={() => onChoice('local')}
                     >
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 -z-0"></div>
+                        <div className="w-20 h-20 rounded-2xl bg-[#059669] flex items-center justify-center mb-6 shadow-md shadow-emerald-200 group-hover:scale-110 transition-transform duration-300">
+                            <Database className="w-10 h-10 text-white" />
+                        </div>
                         
-                        <div className="relative z-10">
-                            <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center mb-8 shadow-lg shadow-indigo-200 group-hover:rotate-6 transition-transform duration-500">
-                                <Cloud className="w-9 h-9 text-white" />
-                            </div>
-                            
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">الربط السحابي</h2>
-                            <p className="text-slate-500 mb-10 leading-relaxed text-lg">
-                                قم بربط جهازك بقاعدة بياناتك السحابية الحالية لمزامنة المبيعات والمخازن لحظياً مع جميع فروعك.
-                            </p>
-                            
-                            <div className="space-y-4 mb-10">
-                                <div className="flex items-center gap-4 text-slate-700 font-bold">
-                                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                                    </div>
-                                    <span>تشفير بيانات عالي المستوى</span>
-                                </div>
-                                <div className="flex items-center gap-4 text-slate-700 font-bold">
-                                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                                        <Zap className="w-4 h-4 text-emerald-600" />
-                                    </div>
-                                    <span>مزامنة فورية عبر الأجهزة</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between group-hover:translate-x-[-5px] transition-transform">
-                                <span className="text-indigo-600 font-black text-xl">نعم، لدي بيانات سحابية</span>
-                                <ArrowRight className="w-6 h-6 text-indigo-600" />
-                            </div>
+                        <h2 className="text-2xl font-bold text-slate-900 mb-3">قاعدة جديدة</h2>
+                        <p className="text-slate-500 mb-8 leading-relaxed text-sm font-medium">
+                            بدء العمل على قاعدة بيانات فارغة مباشرة.
+                        </p>
+                        
+                        <div className="mt-auto w-full">
+                            <button className="w-full py-3 px-6 bg-[#059669] hover:bg-[#047857] text-white font-bold rounded-xl transition-colors shadow-sm">
+                                بدء العمل
+                            </button>
                         </div>
                     </motion.div>
 
-                    {/* Local Option */}
+                    {/* Restore Option */}
                     <motion.div
-                        whileHover={{ y: -10, transition: { duration: 0.3 } }}
-                        className="group relative p-10 rounded-[2.5rem] bg-white border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-200/40 transition-all duration-500 cursor-pointer overflow-hidden"
-                        onClick={() => onChoice('local')}
+                        whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                        className="group relative p-8 rounded-3xl bg-[#fff7ed] border border-orange-100 shadow-lg hover:shadow-xl hover:shadow-orange-100 transition-all duration-300 cursor-pointer flex flex-col items-center text-center"
+                        onClick={() => onChoice('restore')}
                     >
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 -z-0"></div>
+                        <div className="w-20 h-20 rounded-2xl bg-[#ea580c] flex items-center justify-center mb-6 shadow-md shadow-orange-200 group-hover:scale-110 transition-transform duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        
+                        <h2 className="text-2xl font-bold text-slate-900 mb-3">استعادة نسخة</h2>
+                        <p className="text-slate-500 mb-8 leading-relaxed text-sm font-medium">
+                            الذهاب لشاشة النسخ الاحتياطي لاستعادة البيانات.
+                        </p>
+                        
+                        <div className="mt-auto w-full">
+                            <button className="w-full py-3 px-6 bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold rounded-xl transition-colors shadow-sm">
+                                شاشة النسخ الاحتياطي
+                            </button>
+                        </div>
+                    </motion.div>
 
-                        <div className="relative z-10">
-                            <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-8 shadow-lg shadow-slate-200 group-hover:rotate-6 transition-transform duration-500">
-                                <Database className="w-9 h-9 text-white" />
-                            </div>
-                            
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">قاعدة بيانات محلية</h2>
-                            <p className="text-slate-500 mb-10 leading-relaxed text-lg">
-                                ابدأ رحلتك الآن بإنشاء قاعدة بيانات جديدة تماماً على هذا الجهاز. سرعة فائقة وخصوصية مطلقة.
-                            </p>
-
-                            <div className="space-y-4 mb-10">
-                                <div className="flex items-center gap-4 text-slate-700 font-bold">
-                                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                                    </div>
-                                    <span>تحكم كامل في بياناتك</span>
-                                </div>
-                                <div className="flex items-center gap-4 text-slate-700 font-bold">
-                                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                                        <Zap className="w-4 h-4 text-emerald-600" />
-                                    </div>
-                                    <span>يعمل بكفاءة بدون إنترنت</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between group-hover:translate-x-[-5px] transition-transform">
-                                <span className="text-slate-800 font-black text-xl">لا، ابدأ كبرنامج جديد</span>
-                                <ArrowRight className="w-6 h-6 text-slate-800" />
-                            </div>
+                    {/* Cloud Option */}
+                    <motion.div
+                        whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                        className="group relative p-8 rounded-3xl bg-[#eff6ff] border border-blue-100 shadow-lg hover:shadow-xl hover:shadow-blue-100 transition-all duration-300 cursor-pointer flex flex-col items-center text-center"
+                        onClick={() => onChoice('cloud')}
+                    >
+                        <div className="w-20 h-20 rounded-2xl bg-[#2563eb] flex items-center justify-center mb-6 shadow-md shadow-blue-200 group-hover:scale-110 transition-transform duration-300">
+                            <Cloud className="w-10 h-10 text-white" />
+                        </div>
+                        
+                        <h2 className="text-2xl font-bold text-slate-900 mb-3">بيانات سحابية</h2>
+                        <p className="text-slate-500 mb-8 leading-relaxed text-sm font-medium">
+                            إعداد الربط السحابي للمزامنة بين الفروع.
+                        </p>
+                        
+                        <div className="mt-auto w-full">
+                            <button className="w-full py-3 px-6 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold rounded-xl transition-colors shadow-sm">
+                                إعدادات الربط
+                            </button>
                         </div>
                     </motion.div>
                 </div>

@@ -14,7 +14,12 @@ export const checkGitHubUpdate = async (repo: string, currentVersion: string): P
         const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
         
         if (!response.ok) {
-            throw new Error(`GitHub API Error: ${response.statusText}`);
+            return {
+                hasUpdate: false,
+                latestVersion: '',
+                downloadUrl: '',
+                releaseNotes: ''
+            };
         }
 
         const data = await response.json();
@@ -49,7 +54,7 @@ export const checkGitHubUpdate = async (repo: string, currentVersion: string): P
         };
 
     } catch (error) {
-        console.error('Failed to check for updates:', error);
+        // Silently fail if update check fails
         return {
             hasUpdate: false,
             latestVersion: '',

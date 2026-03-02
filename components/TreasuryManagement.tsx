@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { ConfirmationModal, EditIcon, DeleteIcon, ViewIcon, FormattedNumber } from './Shared';
+import { Modal, ConfirmationModal, EditIcon, DeleteIcon, ViewIcon, FormattedNumber, PlusCircleIcon } from './Shared';
 import type { Treasury, NotificationType, SalesInvoice, PurchaseInvoice, SalesReturn, PurchaseReturn, CustomerReceipt, SupplierPayment, Expense, MgmtUser, TreasuryTransfer, DefaultValues, Employee } from '../types';
 
 interface TreasuryManagementProps {
@@ -29,6 +29,7 @@ const TreasuryManagement: React.FC<TreasuryManagementProps> = ({
     const [formData, setFormData] = useState<Omit<Treasury, 'id'> & { id: number | null }>({ ...initialFormState, openingBalance: NaN });
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [isViewing, setIsViewing] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [deleteConfirmationStep, setDeleteConfirmationStep] = useState(0);
     const [treasuryToDelete, setTreasuryToDelete] = useState<Treasury | null>(null);
 
@@ -143,7 +144,7 @@ const TreasuryManagement: React.FC<TreasuryManagementProps> = ({
         setIsEditing(true);
         setIsViewing(viewOnly);
         setFormData(treasury);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsModalOpen(true);
     };
 
     const handleDelete = (treasury: Treasury) => {
@@ -168,6 +169,7 @@ const TreasuryManagement: React.FC<TreasuryManagementProps> = ({
         setIsEditing(false);
         setIsViewing(false);
         setFormData({ ...initialFormState, openingBalance: NaN });
+        setIsModalOpen(false);
     };
 
     const renderDeleteConfirmationModal = () => {
@@ -187,38 +189,50 @@ const TreasuryManagement: React.FC<TreasuryManagementProps> = ({
     return (
         <>
             {renderDeleteConfirmationModal()}
+            <Modal
+                title={isViewing ? 'عرض بيانات الخزينة' : isEditing ? 'تعديل بيانات الخزينة' : 'إضافة خزينة جديدة'}
+                show={isModalOpen}
+                onClose={resetForm}
+            >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className={labelClass} htmlFor="name">اسم الخزينة {requiredSpan}</label>
+                            <input id="name" name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} />
+                        </div>
+                        <div>
+                            <label className={labelClass} htmlFor="keeper">أمين الخزينة</label>
+                            <select id="keeper" name="keeper" value={formData.keeper} onChange={handleInputChange} className={inputClass} disabled={isViewing}>
+                                <option value="">اختر أمين الخزينة</option>
+                                {accountsEmployees.map(emp => (
+                                    <option key={emp.id} value={emp.name}>{emp.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className={labelClass} htmlFor="openingBalance">رصيد أول المدة</label>
+                            <input id="openingBalance" name="openingBalance" type="number" step="0.01" value={isNaN(formData.openingBalance) ? '' : formData.openingBalance} onChange={handleInputChange} className={inputClass} disabled={isViewing} />
+                        </div>
+                    </div>
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                        {!isViewing && (
+                            <button type="submit" className="w-full bg-blue-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                                <PlusCircleIcon className="h-5 w-5" />
+                                <span>{isEditing ? 'تحديث الخزينة' : 'إضافة خزينة'}</span>
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </Modal>
             <div className="space-y-8">
-                <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">تكويد الخزينة</h1>
                 <div className="bg-white/30 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/40 dark:bg-gray-700/30 dark:border-white/20">
-                    <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-6">{isViewing ? 'عرض بيانات الخزينة' : isEditing ? 'تعديل بيانات الخزينة' : 'إضافة خزينة جديدة'}</h2>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className={labelClass} htmlFor="name">اسم الخزينة {requiredSpan}</label>
-                                <input id="name" name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} />
-                            </div>
-                            <div>
-                                <label className={labelClass} htmlFor="keeper">أمين الخزينة</label>
-                                                                <select id="keeper" name="keeper" value={formData.keeper} onChange={handleInputChange} className={inputClass} disabled={isViewing}>
-                                    <option value="">اختر أمين الخزينة</option>
-                                    {accountsEmployees.map(emp => (
-                                        <option key={emp.id} value={emp.name}>{emp.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className={labelClass} htmlFor="openingBalance">رصيد أول المدة</label>
-                                <input id="openingBalance" name="openingBalance" type="number" step="0.01" value={isNaN(formData.openingBalance) ? '' : formData.openingBalance} onChange={handleInputChange} className={inputClass} disabled={isViewing} />
-                            </div>
-                        </div>
-                        <div className="flex justify-end space-x-4 space-x-reverse pt-4">
-                            {isEditing && (<button type="button" onClick={resetForm} className="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-300 transform hover:-translate-y-1 transition-all duration-300">إلغاء</button>)}
-                            {!isViewing && <button type="submit" className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transform hover:-translate-y-1 transition-all duration-300">{isEditing ? 'تحديث الخزينة' : 'إضافة خزينة'}</button>}
-                        </div>
-                    </form>
-                </div>
-                <div className="bg-white/30 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/40 dark:bg-gray-700/30 dark:border-white/20">
-                    <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-4">قائمة الخزائن</h2>
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                        <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300">سجل الخزائن</h2>
+                        <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <PlusCircleIcon className="h-5 w-5" />
+                            <span>إضافة خزينة جديدة</span>
+                        </button>
+                    </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-right">
                             <thead className="border-b-2 border-gray-300 dark:border-gray-600">

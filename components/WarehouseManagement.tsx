@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { ConfirmationModal, EditIcon, DeleteIcon, ViewIcon } from './Shared';
+import { Modal, ConfirmationModal, EditIcon, DeleteIcon, ViewIcon, PlusCircleIcon } from './Shared';
 import type { Warehouse, Item, NotificationType, MgmtUser, Employee } from '../types';
 
 interface WarehouseManagementProps {
@@ -18,6 +18,7 @@ const WarehouseManagement: React.FC<WarehouseManagementProps> = ({ warehouses, s
     const [formData, setFormData] = useState<Omit<Warehouse, 'id'> & { id: number | null }>({ id: null, code: '', name: '', keeper: '', phone: '', address: '', notes: '' });
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [isViewing, setIsViewing] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null);
 
@@ -85,7 +86,7 @@ const WarehouseManagement: React.FC<WarehouseManagementProps> = ({ warehouses, s
         setIsEditing(true);
         setIsViewing(viewOnly);
         setFormData(warehouse);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsModalOpen(true);
     };
 
     const handleDelete = (warehouse: Warehouse) => {
@@ -114,6 +115,7 @@ const WarehouseManagement: React.FC<WarehouseManagementProps> = ({ warehouses, s
         setIsEditing(false);
         setIsViewing(false);
         setFormData({ id: null, code: '', name: '', keeper: '', phone: '', address: '', notes: '' });
+        setIsModalOpen(false);
     }
 
     const inputClass = "h-11 w-full px-4 py-2 bg-black/5 dark:bg-white/5 rounded-lg shadow-[inset_3px_3px_7px_rgba(0,0,0,0.2)] focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed";
@@ -131,55 +133,68 @@ const WarehouseManagement: React.FC<WarehouseManagementProps> = ({ warehouses, s
                     confirmColor="bg-red-600"
                 />
             )}
-            <div className="space-y-8">
-                 <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">تكويد المخازن</h1>
-                <div className="bg-white/30 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/40 dark:bg-gray-700/30 dark:border-white/20">
-                    <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-6">{isViewing ? 'عرض بيانات المخزن' : isEditing ? 'تعديل بيانات المخزن' : 'إضافة مخزن جديد'}</h2>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelClass} htmlFor="code">كود المخزن</label>
-                                <input id="code" name="code" type="text" value={formData.code} onChange={handleInputChange} className={inputClass} placeholder="اتركه فارغاً للتوليد التلقائي" disabled={isViewing} />
-                            </div>
-                            <div>
-                                 <label className={labelClass} htmlFor="name">
-                                    اسم المخزن 
-                                    <span className="text-red-500 dark:text-red-400 font-normal text-sm mr-1">(مطلوب)</span>
-                                </label>
-                                <input id="name" name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className={labelClass} htmlFor="keeper">أمين المخزن</label>
-                                                                <select id="keeper" name="keeper" value={formData.keeper} onChange={handleInputChange} className={inputClass} disabled={isViewing}>
-                                    <option value="">اختر أمين المخزن</option>
-                                    {storeEmployees.map(emp => (
-                                        <option key={emp.id} value={emp.name}>{emp.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className={labelClass} htmlFor="phone">رقم موبايل الأمين</label>
-                                <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} className={inputClass} disabled={isViewing} />
-                            </div>
-                             <div>
-                                <label className={labelClass} htmlFor="address">عنوان المخزن</label>
-                                <input id="address" name="address" type="text" value={formData.address} onChange={handleInputChange} className={inputClass} disabled={isViewing} />
-                            </div>
+            <Modal
+                title={isViewing ? 'عرض بيانات المخزن' : isEditing ? 'تعديل بيانات المخزن' : 'إضافة مخزن جديد'}
+                show={isModalOpen}
+                onClose={resetForm}
+            >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass} htmlFor="code">كود المخزن</label>
+                            <input id="code" name="code" type="text" value={formData.code} onChange={handleInputChange} className={inputClass} placeholder="اتركه فارغاً للتوليد التلقائي" disabled={isViewing} />
                         </div>
                         <div>
-                            <label className={labelClass} htmlFor="notes">ملاحظات</label>
-                            <textarea id="notes" name="notes" value={formData.notes} onChange={handleInputChange} className={inputClass + ' resize-none'} placeholder="أدخل أي ملاحظات (اختياري)" rows={3} disabled={isViewing}></textarea>
+                                <label className={labelClass} htmlFor="name">
+                                اسم المخزن 
+                                <span className="text-red-500 dark:text-red-400 font-normal text-sm mr-1">(مطلوب)</span>
+                            </label>
+                            <input id="name" name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} />
                         </div>
-                        <div className="flex justify-end space-x-4 space-x-reverse pt-4">
-                           {isEditing && (<button type="button" onClick={resetForm} className="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-300 transform hover:-translate-y-1 transition-all duration-300">إلغاء</button>)}
-                           {!isViewing && <button type="submit" className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transform hover:-translate-y-1 transition-all duration-300">{isEditing ? 'تحديث المخزن' : 'إضافة مخزن'}</button>}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className={labelClass} htmlFor="keeper">أمين المخزن</label>
+                            <select id="keeper" name="keeper" value={formData.keeper} onChange={handleInputChange} className={inputClass} disabled={isViewing}>
+                                <option value="">اختر أمين المخزن</option>
+                                {storeEmployees.map(emp => (
+                                    <option key={emp.id} value={emp.name}>{emp.name}</option>
+                                ))}
+                            </select>
                         </div>
-                    </form>
-                </div>
+                        <div>
+                            <label className={labelClass} htmlFor="phone">رقم موبايل الأمين</label>
+                            <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} className={inputClass} disabled={isViewing} />
+                        </div>
+                            <div>
+                            <label className={labelClass} htmlFor="address">عنوان المخزن</label>
+                            <input id="address" name="address" type="text" value={formData.address} onChange={handleInputChange} className={inputClass} disabled={isViewing} />
+                        </div>
+                    </div>
+                    <div>
+                        <label className={labelClass} htmlFor="notes">ملاحظات</label>
+                        <textarea id="notes" name="notes" value={formData.notes} onChange={handleInputChange} className={inputClass + ' resize-none'} placeholder="أدخل أي ملاحظات (اختياري)" rows={3} disabled={isViewing}></textarea>
+                    </div>
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                        {!isViewing && (
+                            <button type="submit" className="w-full bg-blue-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                                <PlusCircleIcon className="h-5 w-5" />
+                                <span>{isEditing ? 'تحديث المخزن' : 'إضافة مخزن'}</span>
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </Modal>
+
+            <div className="space-y-8">
                 <div className="bg-white/30 backdrop-blur-lg rounded-xl shadow-md p-6 border border-white/40 dark:bg-gray-700/30 dark:border-white/20">
-                     <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-4">قائمة المخازن</h2>
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                        <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300">سجل المخازن</h2>
+                        <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <PlusCircleIcon className="h-5 w-5" />
+                            <span>إضافة مخزن جديد</span>
+                        </button>
+                    </div>
                      <div className="overflow-x-auto">
                         <table className="w-full text-right">
                             <thead className="border-b-2 border-gray-300 dark:border-gray-600">

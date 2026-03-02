@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { ConfirmationModal, EditIcon, DeleteIcon, UploadIcon, DownloadIcon, ViewIcon, FormattedNumber, PlusCircleIcon } from './Shared';
+import { Modal, ConfirmationModal, EditIcon, DeleteIcon, UploadIcon, DownloadIcon, ViewIcon, FormattedNumber, PlusCircleIcon } from './Shared';
 import type { Supplier, NotificationType, MgmtUser, PurchaseInvoice, PurchaseReturn, SupplierPayment } from '../types';
 import { exportToExcel, readFromExcel } from '../services/excel';
 import { searchMatch } from '../utils';
@@ -20,6 +20,7 @@ const SupplierManagement: React.FC<SupplierManagementProps> = ({ suppliers, setS
     const [formData, setFormData] = useState(initialFormState);
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [isViewing, setIsViewing] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
     const importFileRef = useRef<HTMLInputElement>(null);
@@ -76,7 +77,7 @@ const SupplierManagement: React.FC<SupplierManagementProps> = ({ suppliers, setS
         setIsEditing(true); 
         setIsViewing(viewOnly);
         setFormData(supplier); 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsModalOpen(true);
     };
 
     const handleDelete = (supplier: Supplier) => { 
@@ -105,6 +106,7 @@ const SupplierManagement: React.FC<SupplierManagementProps> = ({ suppliers, setS
         setIsEditing(false); 
         setIsViewing(false);
         setFormData(initialFormState); 
+        setIsModalOpen(false);
     };
 
     const displayedSuppliers = useMemo(() => {
@@ -141,92 +143,85 @@ const SupplierManagement: React.FC<SupplierManagementProps> = ({ suppliers, setS
                 />
             )}
 
-            {/* Centered Vertical Form Section */}
-            <div className="flex justify-center">
-                <div className={`${cardClass} w-full max-w-lg relative z-10`}>
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-emerald-800 dark:text-emerald-300">
-                            {isViewing ? 'عرض بيانات المورد' : isEditing ? 'تعديل بيانات المورد' : 'تكويد مورد جديد'}
-                        </h1>
-                        {(isEditing || isViewing) && (
-                            <button onClick={resetForm} className="bg-gray-500 text-white px-3 py-1 rounded-lg font-bold hover:bg-gray-600 transition-colors text-sm">
-                                إلغاء
-                            </button>
-                        )}
+            <Modal
+                title={isViewing ? 'عرض بيانات المورد' : isEditing ? 'تعديل بيانات المورد' : 'تكويد مورد جديد'}
+                show={isModalOpen}
+                onClose={resetForm}
+            >
+                <form onSubmit={handleSubmit} className="flex flex-col space-y-5">
+                    <div className="w-full">
+                        <label className={labelClass}>اسم المورد</label>
+                        <input name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} placeholder="مثال: شركة النيل للتجارة" />
                     </div>
                     
-                    <form onSubmit={handleSubmit} className="flex flex-col space-y-5">
-                        <div className="w-full">
-                            <label className={labelClass}>اسم المورد</label>
-                            <input name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} placeholder="مثال: شركة النيل للتجارة" />
-                        </div>
-                        
-                        <div className="w-full">
-                            <label className={labelClass}>رقم الموبايل</label>
-                            <input name="phone" type="text" value={formData.phone} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="01XXXXXXXXX" />
-                        </div>
-                        
-                        <div className="w-full">
-                            <label className={labelClass}>العنوان / المقر</label>
-                            <input name="address" type="text" value={formData.address} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="المحافظة - المدينة - المنطقة" />
-                        </div>
-                        
-                        <div className="w-full">
-                            <label className={labelClass}>رصيد أول المدة (له/دائن)</label>
-                            <input name="openingBalance" type="number" step="0.01" value={isNaN(formData.openingBalance) ? '' : formData.openingBalance} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="0.00" />
-                            <p className="text-[10px] text-gray-500 mt-1 dark:text-gray-400 font-bold">* المبالغ الموجبة تعني رصيد للمورد (علينا له)</p>
-                        </div>
+                    <div className="w-full">
+                        <label className={labelClass}>رقم الموبايل</label>
+                        <input name="phone" type="text" value={formData.phone} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="01XXXXXXXXX" />
+                    </div>
+                    
+                    <div className="w-full">
+                        <label className={labelClass}>العنوان / المقر</label>
+                        <input name="address" type="text" value={formData.address} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="المحافظة - المدينة - المنطقة" />
+                    </div>
+                    
+                    <div className="w-full">
+                        <label className={labelClass}>رصيد أول المدة (له/دائن)</label>
+                        <input name="openingBalance" type="number" step="0.01" value={isNaN(formData.openingBalance) ? '' : formData.openingBalance} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="0.00" />
+                        <p className="text-[10px] text-gray-500 mt-1 dark:text-gray-400 font-bold">* المبالغ الموجبة تعني رصيد للمورد (علينا له)</p>
+                    </div>
 
-                        <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
-                            {!isViewing && (
-                                <button type="submit" className="w-full bg-emerald-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 mb-3">
-                                    <PlusCircleIcon className="h-5 w-5" />
-                                    <span>{isEditing ? 'تحديث البيانات' : 'حفظ بيانات المورد'}</span>
-                                </button>
-                            )}
-                            
-                            <div className="grid grid-cols-2 gap-3 h-11">
-                                <button type="button" onClick={() => importFileRef.current?.click()} className="bg-gray-600 text-white font-bold rounded-lg shadow hover:bg-gray-700 flex items-center justify-center gap-2 text-sm">
-                                    <UploadIcon className="h-4 w-4 text-white" />
-                                    <span>استيراد Excel</span>
-                                </button>
-                                <button type="button" onClick={() => {
-                                    const data = displayedSuppliers.map(s => ({ 'الاسم': s.name, 'رقم الهاتف': s.phone, 'العنوان': s.address, 'رصيد أول المدة': s.openingBalance }));
-                                    exportToExcel(data, 'الموردين');
-                                }} className="bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 flex items-center justify-center gap-2 text-sm">
-                                    <DownloadIcon className="h-4 w-4 text-white" />
-                                    <span>تصدير Excel</span>
-                                </button>
-                            </div>
-                            <input type="file" ref={importFileRef} onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                try {
-                                    const jsonData = await readFromExcel(file);
-                                    if (jsonData.length === 0) throw new Error("الملف فارغ");
-                                    const newSuppliers: Supplier[] = jsonData.map((row: any, i) => ({
-                                        id: Date.now() + i,
-                                        name: row['الاسم'] || row['name'] || row['Name'],
-                                        phone: (row['رقم الهاتف'] || row['phone'] || row['Phone'] || '').toString(),
-                                        address: (row['العنوان'] || row['address'] || row['Address'] || '').toString(),
-                                        openingBalance: parseFloat(row['رصيد أول المدة'] || row['openingBalance'] || 0) || 0,
-                                        createdBy: currentUser.username,
-                                        createdAt: new Date().toISOString()
-                                    })).filter(s => s.name);
-                                    setSuppliers(prev => [...prev, ...newSuppliers]);
-                                    showNotification('add');
-                                } catch (err) { alert('فشل الاستيراد'); }
-                                if (e.target) e.target.value = '';
-                            }} accept=".xlsx, .xls, .csv" className="hidden" />
-                        </div>
-                    </form>
-                </div>
-            </div>
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                        {!isViewing && (
+                            <button type="submit" className="w-full bg-emerald-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 mb-3">
+                                <PlusCircleIcon className="h-5 w-5" />
+                                <span>{isEditing ? 'تحديث البيانات' : 'حفظ بيانات المورد'}</span>
+                            </button>
+                        )}
+                        <input type="file" ref={importFileRef} onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                                const jsonData = await readFromExcel(file);
+                                if (jsonData.length === 0) throw new Error("الملف فارغ");
+                                const newSuppliers: Supplier[] = jsonData.map((row: any, i) => ({
+                                    id: Date.now() + i,
+                                    name: row['الاسم'] || row['name'] || row['Name'],
+                                    phone: (row['رقم الهاتف'] || row['phone'] || row['Phone'] || '').toString(),
+                                    address: (row['العنوان'] || row['address'] || row['Address'] || '').toString(),
+                                    openingBalance: parseFloat(row['رصيد أول المدة'] || row['openingBalance'] || 0) || 0,
+                                    createdBy: currentUser.username,
+                                    createdAt: new Date().toISOString()
+                                })).filter(s => s.name);
+                                setSuppliers(prev => [...prev, ...newSuppliers]);
+                                showNotification('add');
+                            } catch (err) { alert('فشل الاستيراد'); }
+                            if (e.target) e.target.value = '';
+                        }} accept=".xlsx, .xls, .csv" className="hidden" />
+                    </div>
+                </form>
+            </Modal>
 
             {/* Permanent Supplier Log Section */}
             <div className={cardClass}>
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                    <h2 className="text-xl font-bold text-emerald-800 dark:text-emerald-300">سجل الموردين</h2>
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-xl font-bold text-emerald-800 dark:text-emerald-300">سجل الموردين</h2>
+                        <button onClick={() => setIsModalOpen(true)} className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <PlusCircleIcon className="h-5 w-5" />
+                            <span>إضافة مورد جديد</span>
+                        </button>
+                        <button type="button" onClick={() => importFileRef.current?.click()} className="bg-gray-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <UploadIcon className="h-4 w-4 text-white" />
+                            <span>استيراد Excel</span>
+                        </button>
+                        <button type="button" onClick={() => {
+                            const data = displayedSuppliers.map(s => ({ 'الاسم': s.name, 'رقم الهاتف': s.phone, 'العنوان': s.address, 'رصيد أول المدة': s.openingBalance }));
+                            exportToExcel(data, 'الموردين');
+                        }} className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <DownloadIcon className="h-4 w-4 text-white" />
+                            <span>تصدير Excel</span>
+                        </button>
+                    </div>
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-2 px-4 rounded-lg text-center shadow-sm">
                             <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">عدد الموردين</p>

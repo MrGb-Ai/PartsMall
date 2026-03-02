@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { ConfirmationModal, EditIcon, DeleteIcon, UploadIcon, DownloadIcon, ViewIcon, FormattedNumber, PlusCircleIcon } from './Shared';
+import { Modal, ConfirmationModal, EditIcon, DeleteIcon, UploadIcon, DownloadIcon, ViewIcon, FormattedNumber, PlusCircleIcon } from './Shared';
 import type { Customer, NotificationType, MgmtUser, SalesInvoice, SalesReturn, CustomerReceipt } from '../types';
 import { exportToExcel, readFromExcel } from '../services/excel';
 import { searchMatch, normalizeText, generateUniqueId } from '../utils';
@@ -20,6 +20,7 @@ const CustomerManagement: React.FC<CustomerManagementProps> = ({ customers, setC
     const [formData, setFormData] = useState(initialFormState);
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [isViewing, setIsViewing] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
     const importFileRef = useRef<HTMLInputElement>(null);
@@ -76,7 +77,7 @@ const CustomerManagement: React.FC<CustomerManagementProps> = ({ customers, setC
         setIsEditing(true);
         setIsViewing(viewOnly);
         setFormData(customer);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsModalOpen(true);
     };
 
     const handleDelete = (customer: Customer) => {
@@ -109,6 +110,7 @@ const CustomerManagement: React.FC<CustomerManagementProps> = ({ customers, setC
         setIsEditing(false);
         setIsViewing(false);
         setFormData(initialFormState);
+        setIsModalOpen(false);
     };
 
     const processExcelImport = async (file: File) => {
@@ -212,82 +214,77 @@ const CustomerManagement: React.FC<CustomerManagementProps> = ({ customers, setC
                 />
             )}
 
-            <div className="flex justify-center">
-                <div className={`${cardClass} w-full max-w-lg relative z-10`}>
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-blue-800 dark:text-blue-300">
-                            {isViewing ? 'عرض بيانات العميل' : isEditing ? 'تعديل بيانات العميل' : 'تكويد عميل جديد'}
-                        </h1>
-                        {(isEditing || isViewing) && (
-                            <button onClick={resetForm} className="bg-gray-500 text-white px-3 py-1 rounded-lg font-bold hover:bg-gray-600 transition-colors text-sm">
-                                إلغاء
-                            </button>
-                        )}
+            <Modal
+                title={isViewing ? 'عرض بيانات العميل' : isEditing ? 'تعديل بيانات العميل' : 'تكويد عميل جديد'}
+                show={isModalOpen}
+                onClose={resetForm}
+            >
+                <form onSubmit={handleSubmit} className="flex flex-col space-y-5">
+                    <div className="w-full">
+                        <label className={labelClass}>اسم العميل</label>
+                        <input name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} placeholder="مثال: شركة التوريدات الهندسية" />
                     </div>
                     
-                    <form onSubmit={handleSubmit} className="flex flex-col space-y-5">
-                        <div className="w-full">
-                            <label className={labelClass}>اسم العميل</label>
-                            <input name="name" type="text" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing} placeholder="مثال: شركة التوريدات الهندسية" />
-                        </div>
-                        
-                        <div className="w-full">
-                            <label className={labelClass}>رقم الموبايل</label>
-                            <input name="phone" type="text" value={formData.phone} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="01XXXXXXXXX" />
-                        </div>
-                        
-                        <div className="w-full">
-                            <label className={labelClass}>العنوان</label>
-                            <input name="address" type="text" value={formData.address} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="المحافظة - المدينة - الشارع" />
-                        </div>
-                        
-                        <div className="w-full">
-                            <label className={labelClass}>رصيد أول المدة (مدين/عليه)</label>
-                            <input name="openingBalance" type="number" step="0.01" value={isNaN(formData.openingBalance) ? '' : formData.openingBalance} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="0.00" />
-                            <p className="text-[10px] text-gray-500 mt-1 dark:text-gray-400 font-bold">* المبالغ السالبة تعني رصيد دائن (له)</p>
-                        </div>
+                    <div className="w-full">
+                        <label className={labelClass}>رقم الموبايل</label>
+                        <input name="phone" type="text" value={formData.phone} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="01XXXXXXXXX" />
+                    </div>
+                    
+                    <div className="w-full">
+                        <label className={labelClass}>العنوان</label>
+                        <input name="address" type="text" value={formData.address} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="المحافظة - المدينة - الشارع" />
+                    </div>
+                    
+                    <div className="w-full">
+                        <label className={labelClass}>رصيد أول المدة (مدين/عليه)</label>
+                        <input name="openingBalance" type="number" step="0.01" value={isNaN(formData.openingBalance) ? '' : formData.openingBalance} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="0.00" />
+                        <p className="text-[10px] text-gray-500 mt-1 dark:text-gray-400 font-bold">* المبالغ السالبة تعني رصيد دائن (له)</p>
+                    </div>
 
-                        <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
-                            {!isViewing && (
-                                <button type="submit" className="w-full bg-blue-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 mb-3">
-                                    <PlusCircleIcon className="h-5 w-5" />
-                                    <span>{isEditing ? 'تحديث البيانات' : 'حفظ بيانات العميل'}</span>
-                                </button>
-                            )}
-                            
-                            <div className="grid grid-cols-2 gap-3 h-11">
-                                <button type="button" onClick={() => importFileRef.current?.click()} className="bg-gray-600 text-white font-bold rounded-lg shadow hover:bg-gray-700 flex items-center justify-center gap-2 text-sm">
-                                    <UploadIcon className="h-4 w-4 text-white" />
-                                    <span>استيراد Excel</span>
-                                </button>
-                                <button type="button" onClick={() => {
-                                    const data = displayedCustomers.map(c => ({ 'الاسم': c.name, 'رقم الهاتف': c.phone, 'العنوان': c.address, 'رصيد أول المدة': c.openingBalance }));
-                                    exportToExcel(data, 'العملاء');
-                                }} className="bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 flex items-center justify-center gap-2 text-sm">
-                                    <DownloadIcon className="h-4 w-4 text-white" />
-                                    <span>تصدير Excel</span>
-                                </button>
-                            </div>
-                            <input 
-                                type="file" 
-                                ref={importFileRef} 
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) processExcelImport(file);
-                                    e.target.value = '';
-                                }} 
-                                accept=".xlsx, .xls, .csv" 
-                                className="hidden" 
-                            />
-                        </div>
-                    </form>
-                </div>
-            </div>
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                        {!isViewing && (
+                            <button type="submit" className="w-full bg-blue-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 mb-3">
+                                <PlusCircleIcon className="h-5 w-5" />
+                                <span>{isEditing ? 'تحديث البيانات' : 'حفظ بيانات العميل'}</span>
+                            </button>
+                        )}
+                        
+                        <input 
+                            type="file" 
+                            ref={importFileRef} 
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) processExcelImport(file);
+                                e.target.value = '';
+                            }} 
+                            accept=".xlsx, .xls, .csv" 
+                            className="hidden" 
+                        />
+                    </div>
+                </form>
+            </Modal>
 
             {/* Permanent Customer Log Section */}
             <div className={cardClass}>
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                    <h2 className="text-xl font-bold text-blue-800 dark:text-blue-300">سجل العملاء</h2>
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-xl font-bold text-blue-800 dark:text-blue-300">سجل العملاء</h2>
+                        <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <PlusCircleIcon className="h-5 w-5" />
+                            <span>إضافة عميل جديد</span>
+                        </button>
+                        <button type="button" onClick={() => importFileRef.current?.click()} className="bg-gray-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <UploadIcon className="h-4 w-4 text-white" />
+                            <span>استيراد Excel</span>
+                        </button>
+                        <button type="button" onClick={() => {
+                            const data = displayedCustomers.map(c => ({ 'الاسم': c.name, 'رقم الهاتف': c.phone, 'العنوان': c.address, 'رصيد أول المدة': c.openingBalance }));
+                            exportToExcel(data, 'العملاء');
+                        }} className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <DownloadIcon className="h-4 w-4 text-white" />
+                            <span>تصدير Excel</span>
+                        </button>
+                    </div>
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-2 px-4 rounded-lg text-center shadow-sm">
                             <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">عدد العملاء</p>

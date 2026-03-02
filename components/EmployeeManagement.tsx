@@ -24,6 +24,11 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
     departmentId: departments.length > 0 ? departments[0].id : 0,
     salary: 0,
     vacationDays: [],
+    scheduledCheckInTime: '',
+    scheduledCheckOutTime: '',
+    workingHoursPerDay: 8,
+    commissionType: 'none',
+    commissionValue: 0,
     isBlocked: false,
   };
 
@@ -43,14 +48,15 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
     const { name, value } = e.target;
     setCurrentEmployee({ 
       ...currentEmployee, 
-      [name]: name === 'departmentId' || name === 'salary' ? Number(value) : value 
+      [name]: name === 'departmentId' || name === 'salary' || name === 'workingHoursPerDay' || name === 'commissionValue' ? Number(value) : value 
     });
   };
 
   const handleDayToggle = (day: DayOfWeek) => {
-    const vacationDays = currentEmployee.vacationDays.includes(day)
-      ? currentEmployee.vacationDays.filter((d) => d !== day)
-      : [...currentEmployee.vacationDays, day];
+    const currentVacationDays = currentEmployee.vacationDays || [];
+    const vacationDays = currentVacationDays.includes(day)
+      ? currentVacationDays.filter((d) => d !== day)
+      : [...currentVacationDays, day];
     setCurrentEmployee({ ...currentEmployee, vacationDays });
   };
 
@@ -101,9 +107,9 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
   };
 
   const filteredEmployees = employees.filter(emp => 
-    (emp.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (emp.code || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (emp.phone || '').includes(searchQuery)
+    (emp.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (emp.code || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (emp.phone || '').includes(searchQuery || '')
   );
 
   return (
@@ -317,34 +323,102 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                             />
                         </div>
 
-                        <div className="col-span-1">
-                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">الراتب الأساسي</label>
-                            <input
-                                type="number"
-                                name="salary"
-                                value={currentEmployee.salary}
-                                onChange={handleInputChange}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
-                                min="0"
-                            />
+                        <div className="col-span-2 grid grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">الراتب الأساسي</label>
+                                <input
+                                    type="number"
+                                    name="salary"
+                                    value={currentEmployee.salary}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                    min="0"
+                                />
+                            </div>
+                            <div className="col-span-1">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">ساعات العمل في اليوم</label>
+                                <input
+                                    type="number"
+                                    name="workingHoursPerDay"
+                                    value={currentEmployee.workingHoursPerDay || 8}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                    min="1"
+                                    max="24"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="col-span-2 grid grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">موعد الحضور</label>
+                                <input
+                                    type="time"
+                                    name="scheduledCheckInTime"
+                                    value={currentEmployee.scheduledCheckInTime || ''}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                />
+                            </div>
+                            <div className="col-span-1">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">موعد الانصراف</label>
+                                <input
+                                    type="time"
+                                    name="scheduledCheckOutTime"
+                                    value={currentEmployee.scheduledCheckOutTime || ''}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="col-span-2 grid grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">نوع العمولة</label>
+                                <select
+                                    name="commissionType"
+                                    value={currentEmployee.commissionType || 'none'}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                                >
+                                    <option value="none">بدون عمولة</option>
+                                    <option value="percentage">نسبة مئوية (%)</option>
+                                    <option value="per_item">مبلغ ثابت للقطعة</option>
+                                </select>
+                            </div>
+                            <div className="col-span-1">
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">قيمة العمولة</label>
+                                <input
+                                    type="number"
+                                    name="commissionValue"
+                                    value={currentEmployee.commissionValue || 0}
+                                    onChange={handleInputChange}
+                                    disabled={!currentEmployee.commissionType || currentEmployee.commissionType === 'none'}
+                                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
+                                    min="0"
+                                    step="0.01"
+                                />
+                            </div>
                         </div>
 
                         <div className="col-span-2">
                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">أيام الإجازات الأسبوعية</label>
                             <div className="flex flex-wrap gap-2">
-                                {daysOfWeek.map((day) => (
+                                {daysOfWeek.map((day) => {
+                                    const isSelected = (currentEmployee.vacationDays || []).includes(day.key);
+                                    return (
                                     <button
                                         key={day.key}
                                         onClick={() => handleDayToggle(day.key)}
                                         className={`px-4 py-2 rounded-lg text-sm font-bold transition-all border ${
-                                            currentEmployee.vacationDays.includes(day.key)
+                                            isSelected
                                                 ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105'
                                                 : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
                                         }`}
                                     >
                                         {day.label}
                                     </button>
-                                ))}
+                                )})}
                             </div>
                         </div>
                     </div>

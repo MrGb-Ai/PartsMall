@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { ConfirmationModal, EditIcon, DeleteIcon, ViewIcon, FormattedNumber, PlusCircleIcon, ChevronDownIcon } from './Shared';
+import { Modal, ConfirmationModal, EditIcon, DeleteIcon, ViewIcon, FormattedNumber, PlusCircleIcon, ChevronDownIcon } from './Shared';
 import type { SalesRepresentative, NotificationType, MgmtUser, SalesInvoice, SalesReturn, Employee } from '../types';
 import { searchMatch } from '../utils';
 
@@ -20,6 +20,7 @@ const SalesRepresentativeManagement: React.FC<SalesRepresentativeManagementProps
     const [formData, setFormData] = useState(initialFormState);
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [isViewing, setIsViewing] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [repToDelete, setRepToDelete] = useState<SalesRepresentative | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -82,7 +83,7 @@ const SalesRepresentativeManagement: React.FC<SalesRepresentativeManagementProps
         setIsEditing(true);
         setIsViewing(viewOnly);
         setFormData(rep);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsModalOpen(true);
     };
 
     const handleDelete = (rep: SalesRepresentative) => {
@@ -113,6 +114,7 @@ const SalesRepresentativeManagement: React.FC<SalesRepresentativeManagementProps
         setIsEditing(false);
         setIsViewing(false);
         setFormData(initialFormState);
+        setIsModalOpen(false);
     };
 
     const displayedReps = useMemo(() => {
@@ -139,67 +141,63 @@ const SalesRepresentativeManagement: React.FC<SalesRepresentativeManagementProps
                 />
             )}
 
-            {/* Centered Vertical Form Section */}
-            <div className="flex justify-center">
-                <div className={`${cardClass} w-full max-w-lg relative z-10`}>
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-amber-800 dark:text-amber-300">
-                            {isViewing ? 'عرض بيانات المندوب' : isEditing ? 'تعديل بيانات المندوب' : 'تكويد مندوب جديد'}
-                        </h1>
-                        {(isEditing || isViewing) && (
-                            <button onClick={resetForm} className="bg-gray-500 text-white px-3 py-1 rounded-lg font-bold hover:bg-gray-600 transition-colors text-sm">
-                                إلغاء
+            <Modal
+                title={isViewing ? 'عرض بيانات المندوب' : isEditing ? 'تعديل بيانات المندوب' : 'تكويد مندوب جديد'}
+                show={isModalOpen}
+                onClose={resetForm}
+            >
+                <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+                    <div className="w-full">
+                        <label className={labelClass}>كود / رقم المندوب</label>
+                        <input name="code" type="text" value={formData.code} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="سيتم التوليد تلقائياً إذا ترك فارغاً" />
+                    </div>
+
+                    <div className="w-full">
+                        <label className={labelClass}>اسم المندوب</label>
+                        <select name="name" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing}>
+                            <option value="">اختر مندوباً</option>
+                            {salesEmployees.map(emp => (
+                                <option key={emp.id} value={emp.name}>{emp.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    
+                    <div className="w-full">
+                        <label className={labelClass}>رقم الموبايل</label>
+                        <input name="phone" type="text" value={formData.phone} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="01XXXXXXXXX" />
+                    </div>
+
+                    <div className="w-full">
+                        <label className={labelClass}>الرقم القومي</label>
+                        <input name="nationalId" type="text" value={formData.nationalId} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="14 رقم" />
+                    </div>
+                    
+                    <div className="w-full">
+                        <label className={labelClass}>العنوان</label>
+                        <input name="address" type="text" value={formData.address} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="السكن الحالي" />
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                        {!isViewing && (
+                            <button type="submit" className="w-full bg-amber-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-2">
+                                <PlusCircleIcon className="h-5 w-5" />
+                                <span>{isEditing ? 'تحديث البيانات' : 'حفظ بيانات المندوب'}</span>
                             </button>
                         )}
                     </div>
-                    
-                    <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
-                        <div className="w-full">
-                            <label className={labelClass}>كود / رقم المندوب</label>
-                            <input name="code" type="text" value={formData.code} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="سيتم التوليد تلقائياً إذا ترك فارغاً" />
-                        </div>
-
-                        <div className="w-full">
-                            <label className={labelClass}>اسم المندوب</label>
-                                                        <select name="name" value={formData.name} onChange={handleInputChange} className={inputClass} required disabled={isViewing}>
-                                <option value="">اختر مندوباً</option>
-                                {salesEmployees.map(emp => (
-                                    <option key={emp.id} value={emp.name}>{emp.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        
-                        <div className="w-full">
-                            <label className={labelClass}>رقم الموبايل</label>
-                            <input name="phone" type="text" value={formData.phone} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="01XXXXXXXXX" />
-                        </div>
-
-                        <div className="w-full">
-                            <label className={labelClass}>الرقم القومي</label>
-                            <input name="nationalId" type="text" value={formData.nationalId} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="14 رقم" />
-                        </div>
-                        
-                        <div className="w-full">
-                            <label className={labelClass}>العنوان</label>
-                            <input name="address" type="text" value={formData.address} onChange={handleInputChange} className={inputClass} disabled={isViewing} placeholder="السكن الحالي" />
-                        </div>
-
-                        <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
-                            {!isViewing && (
-                                <button type="submit" className="w-full bg-amber-600 text-white font-bold h-12 rounded-lg shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-2">
-                                    <PlusCircleIcon className="h-5 w-5" />
-                                    <span>{isEditing ? 'تحديث البيانات' : 'حفظ بيانات المندوب'}</span>
-                                </button>
-                            )}
-                        </div>
-                    </form>
-                </div>
-            </div>
+                </form>
+            </Modal>
 
             {/* Permanent Sales Rep Log Section */}
             <div className={cardClass}>
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                    <h2 className="text-xl font-bold text-amber-800 dark:text-amber-300">سجل المناديب</h2>
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-xl font-bold text-amber-800 dark:text-amber-300">سجل المناديب</h2>
+                        <button onClick={() => setIsModalOpen(true)} className="bg-amber-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-amber-700 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                            <PlusCircleIcon className="h-5 w-5" />
+                            <span>إضافة مندوب جديد</span>
+                        </button>
+                    </div>
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 px-4 rounded-lg text-center shadow-sm">
                             <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">إجمالي المناديب</p>

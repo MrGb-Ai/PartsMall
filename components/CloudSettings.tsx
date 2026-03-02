@@ -67,6 +67,82 @@ const CloudSettings: React.FC<CloudSettingsProps> = ({ firebaseConfig, setFireba
         }
     };
 
+    const handleFileUpload = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt,.json,.env';
+        input.onchange = (e: any) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target?.result as string;
+                if (!content) return;
+
+                let newConfig = { ...formData };
+                let isParsed = false;
+
+                // Try JSON
+                try {
+                    const json = JSON.parse(content);
+                    if (json.apiKey || json.projectId) {
+                        newConfig = { ...newConfig, ...json };
+                        isParsed = true;
+                    }
+                } catch (e) {
+                    // Not JSON
+                }
+
+                // Try Firebase snippet format
+                if (!isParsed) {
+                    const keys: (keyof FirebaseConfig)[] = [
+                        'apiKey', 'authDomain', 'databaseURL', 'projectId', 
+                        'storageBucket', 'messagingSenderId', 'appId'
+                    ];
+                    let foundAny = false;
+                    keys.forEach(key => {
+                        const regex = new RegExp(`"?${key}"?\\s*:\\s*["']([^"']+)["']`, 'i');
+                        const match = content.match(regex);
+                        if (match && match[1]) {
+                            newConfig[key] = match[1];
+                            foundAny = true;
+                        }
+                    });
+                    if (foundAny) {
+                        isParsed = true;
+                    }
+                }
+
+                // Try line by line
+                if (!isParsed) {
+                    const lines = content.split('\n').map(l => l.trim()).filter(l => l);
+                    if (lines.length >= 6) {
+                        newConfig.apiKey = lines[0] || '';
+                        newConfig.authDomain = lines[1] || '';
+                        newConfig.databaseURL = lines[2] || '';
+                        newConfig.projectId = lines[3] || '';
+                        newConfig.storageBucket = lines[4] || '';
+                        newConfig.messagingSenderId = lines[5] || '';
+                        newConfig.appId = lines[6] || '';
+                        isParsed = true;
+                    }
+                }
+
+                if (isParsed) {
+                    setFormData(newConfig);
+                    setFirebaseConfig(newConfig);
+                    showNotification('save');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    alert("لم يتم التعرف على صيغة الملف. يرجى التأكد من محتواه.");
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setFirebaseConfig(formData);
@@ -138,14 +214,24 @@ const CloudSettings: React.FC<CloudSettingsProps> = ({ firebaseConfig, setFireba
                             className="w-full h-32 p-4 bg-white/50 dark:bg-black/30 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 font-mono text-xs dir-ltr"
                             placeholder='const firebaseConfig = {&#10;  apiKey: "...",&#10;  authDomain: "...",&#10;  ...&#10;};'
                         ></textarea>
-                        <button 
-                            type="button"
-                            onClick={handleAutoFill}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2"
-                        >
-                            <span>استخراج البيانات تلقائياً</span>
-                            <SwitchHorizontalIcon className="w-4 h-4 ml-0 rotate-90" />
-                        </button>
+                        <div className="flex flex-wrap gap-4">
+                            <button 
+                                type="button"
+                                onClick={handleAutoFill}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2"
+                            >
+                                <span>استخراج البيانات تلقائياً</span>
+                                <SwitchHorizontalIcon className="w-4 h-4 ml-0 rotate-90" />
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={handleFileUpload}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2"
+                            >
+                                <span>جلب البيانات من ملف</span>
+                                <UploadIcon className="w-4 h-4 ml-0" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

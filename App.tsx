@@ -69,7 +69,7 @@ import type {
     MgmtUser, CompanyData, Warehouse, Unit, Item, Treasury, ExpenseCategory, Expense, Customer, CustomerReceipt,
     SalesRepresentative, Supplier, SupplierPayment, SalesInvoice, SalesReturn, 
     PurchaseInvoice, PurchaseReturn, WarehouseTransfer, TreasuryTransfer, AppBackupData, NotificationType, DefaultValues, FirebaseConfig, StorableDiscountItem, DatabaseProfile,
-    DocToView, PreselectedSalesRep, SavedImport, Employee, Department, ChatMessage
+    DocToView, PreselectedSalesRep, SavedImport, Employee, Department, ChatMessage, AttendanceRecord, SalaryRecord
 } from './types';
 
 const useGlobalStorage = <T,>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
@@ -210,6 +210,8 @@ const App: React.FC = () => {
   const [importCalculatorHistory, setImportCalculatorHistory] = useSyncedState<SavedImport[]>('importCalculatorHistory', []);
   const [employees, setEmployees] = useSyncedState<Employee[]>('employees', []);
   const [departments, setDepartments] = useSyncedState<Department[]>('departments', []);
+  const [attendanceRecords, setAttendanceRecords] = useSyncedState<AttendanceRecord[]>('attendanceRecords', []);
+  const [salaryRecords, setSalaryRecords] = useSyncedState<SalaryRecord[]>('salaryRecords', []);
   const [chatMessages, setChatMessages] = useSyncedState<ChatMessage[]>('chatMessages', []);
 
   useEffect(() => {
@@ -322,9 +324,10 @@ const App: React.FC = () => {
     }
   };
   
-  const handleInitialSetupChoice = (choice: 'cloud' | 'local') => {
+  const handleInitialSetupChoice = (choice: 'cloud' | 'local' | 'restore') => {
     setIsSetupComplete(true);
     if (choice === 'cloud') setCurrentView('cloudSettings');
+    else if (choice === 'restore') setCurrentView('backupSettings');
     else setCurrentView('dashboard');
   };
 
@@ -413,8 +416,8 @@ const App: React.FC = () => {
       case 'weeklyReport': return <WeeklyReport salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} customerReceipts={customerReceipts} items={items} companyData={companyData} defaultValues={defaultValues} />;
       case 'itemSearch': return <ItemSearch items={items} warehouses={warehouses} />;
       case 'discountManagement': return <DiscountManagement items={items} companyData={companyData} activeDiscounts={activeDiscounts} setActiveDiscounts={setActiveDiscounts} showNotification={showNotification} selectedDiscountItems={selectedDiscountItems} setSelectedDiscountItems={setSelectedDiscountItems} />;
-      case 'salaries': return <Salaries />;
-      case 'attendance': return <Attendance />;
+      case 'salaries': return <Salaries employees={employees} attendanceRecords={attendanceRecords} salaryRecords={salaryRecords} setSalaryRecords={setSalaryRecords} currentUser={currentUser!} salesInvoices={salesInvoices} salesReturns={salesReturns} salesRepresentatives={salesRepresentatives} departments={departments} />;
+      case 'attendance': return <Attendance employees={employees} attendanceRecords={attendanceRecords} setAttendanceRecords={setAttendanceRecords} currentUser={currentUser!} departments={departments} />;
       case 'employeeManagement': return <EmployeeManagement employees={employees} setEmployees={setEmployees} currentUser={currentUser!} departments={departments} />;
       case 'appUnlock': return <AppUnlock users={users} setUsers={setUsers} showNotification={showNotification} />;
       case 'about': return <About updateAvailable={updateAvailable} onNavigate={setCurrentView} activeDatabaseName={databases?.find(d => d.id === activeDatabaseId)?.name || 'البيانات الرئيسية (السحابة)'} isDBReady={isDBReady} isCloudConnected={isCloudConnected} />;
