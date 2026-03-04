@@ -106,6 +106,23 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
     setCurrentEmployee({ ...initialEmployeeState, departmentId: departments.length > 0 ? departments[0].id : 0 });
   };
 
+  const handleAddEmployee = () => {
+    // Generate code starting from 1
+    const maxCode = employees.reduce((max, emp) => {
+      const codeNum = parseInt(emp.code || '0', 10);
+      return !isNaN(codeNum) && codeNum > max ? codeNum : max;
+    }, 0);
+    const nextCode = (maxCode + 1).toString();
+
+    setCurrentEmployee({
+      ...initialEmployeeState,
+      code: nextCode,
+      departmentId: departments.length > 0 ? departments[0].id : 0
+    });
+    setIsEditing(false);
+    setIsModalOpen(true);
+  };
+
   const filteredEmployees = employees.filter(emp => 
     (emp.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
     (emp.code || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
@@ -123,7 +140,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, setE
                 <p className="text-gray-500 dark:text-gray-400 mt-1">إدارة بيانات الموظفين والرواتب والإجازات</p>
             </div>
             <button 
-                onClick={() => setIsModalOpen(true)}
+                onClick={handleAddEmployee}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 font-bold"
             >
                 <PlusCircleIcon className="w-5 h-5" />

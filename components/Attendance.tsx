@@ -444,7 +444,7 @@ const Attendance: React.FC<AttendanceProps> = ({ employees, attendanceRecords, s
                       <td className="p-4 text-center font-mono text-gray-600 dark:text-gray-400">{emp.code || '-'}</td>
                       <td className="p-4">
                         <div className="font-bold text-gray-800 dark:text-gray-200">{emp.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{emp.jobTitle}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{emp.jobTitle}</div>
                       </td>
                       <td className="p-4 text-gray-600 dark:text-gray-300">{dept?.name || '-'}</td>
                       <td className="p-4">

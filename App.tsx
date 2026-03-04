@@ -69,7 +69,7 @@ import type {
     MgmtUser, CompanyData, Warehouse, Unit, Item, Treasury, ExpenseCategory, Expense, Customer, CustomerReceipt,
     SalesRepresentative, Supplier, SupplierPayment, SalesInvoice, SalesReturn, 
     PurchaseInvoice, PurchaseReturn, WarehouseTransfer, TreasuryTransfer, AppBackupData, NotificationType, DefaultValues, FirebaseConfig, StorableDiscountItem, DatabaseProfile,
-    DocToView, PreselectedSalesRep, SavedImport, Employee, Department, ChatMessage, AttendanceRecord, SalaryRecord
+    DocToView, PreselectedSalesRep, SavedImport, Employee, Department, ChatMessage, AttendanceRecord, SalaryRecord, OnlineSession
 } from './types';
 
 const useGlobalStorage = <T,>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
@@ -120,10 +120,39 @@ const App: React.FC = () => {
     const isRemoteUpdate = useRef(false);
     const hasSyncedWithCloud = useRef(false);
     const localValueRef = useRef(storedValue);
+    const broadcastChannel = useRef<BroadcastChannel | null>(null);
 
     useEffect(() => { localValueRef.current = storedValue; }, [storedValue]);
 
     const effectiveDbId = customDbId !== undefined ? customDbId : activeDatabaseId;
+
+    // Setup BroadcastChannel for cross-tab sync
+    useEffect(() => {
+        try {
+            const channel = new BroadcastChannel(`pos_sync_${tableName}`);
+            broadcastChannel.current = channel;
+            
+            channel.onmessage = (event) => {
+                if (event.data && event.data.type === 'UPDATE') {
+                    // Mark as remote update to prevent re-broadcasting or re-uploading to cloud immediately
+                    isRemoteUpdate.current = true;
+                    setStoredValue(event.data.payload);
+                    
+                    // Also update IndexedDB to keep it in sync
+                    if (Array.isArray(event.data.payload)) saveTableData(tableName, event.data.payload);
+                    else saveSingleRow(tableName, event.data.payload);
+
+                    setTimeout(() => { isRemoteUpdate.current = false; }, 500);
+                }
+            };
+
+            return () => {
+                channel.close();
+            };
+        } catch (e) {
+            console.error("BroadcastChannel error:", e);
+        }
+    }, [tableName]);
 
     useEffect(() => {
         if (!isDBReady) return;
@@ -164,6 +193,10 @@ const App: React.FC = () => {
         const isRemote = isRemoteUpdate.current;
         let savePromise = Array.isArray(storedValue) ? saveTableData(tableName, storedValue) : saveSingleRow(tableName, storedValue);
         savePromise.then(() => {
+            if (!isRemote) {
+                // Broadcast local changes to other tabs
+                broadcastChannel.current?.postMessage({ type: 'UPDATE', payload: storedValue });
+            }
             if (isCloudConnected && !isRemote && hasSyncedWithCloud.current) {
                 writeToDb(effectiveDbId, tableName, storedValue);
             }
@@ -213,21 +246,15 @@ const App: React.FC = () => {
   const [attendanceRecords, setAttendanceRecords] = useSyncedState<AttendanceRecord[]>('attendanceRecords', []);
   const [salaryRecords, setSalaryRecords] = useSyncedState<SalaryRecord[]>('salaryRecords', []);
   const [chatMessages, setChatMessages] = useSyncedState<ChatMessage[]>('chatMessages', []);
+  const [onlineSessions, setOnlineSessions] = useSyncedState<OnlineSession[]>('onlineSessions', []);
 
-  useEffect(() => {
-    if (defaultValues.githubRepo) {
-      checkGitHubUpdate(defaultValues.githubRepo, APP_VERSION).then(info => {
-        setLatestVersion(info.latestVersion);
-        setDownloadUrl(info.downloadUrl);
-        setReleaseNotes(info.releaseNotes);
-        if (info.hasUpdate) {
-          setUpdateAvailable(true);
-        } else {
-          setUpdateAvailable(false);
-        }
-      });
-    }
-  }, [defaultValues.githubRepo]);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<MgmtUser | null>(null);
+  const [docToView, setDocToView] = useState<DocToView>(null);
+  const [preselectedCustomer, setPreselectedCustomer] = useState<number | null>(null);
+  const [preselectedSupplier, setPreselectedSupplier] = useState<number | null>(null);
+  const [preselectedSalesRep, setPreselectedSalesRep] = useState<PreselectedSalesRep>(null);
 
   const [salesInvoiceDraft, setSalesInvoiceDraft] = useState<SalesInvoice | null>(null);
   const [salesInvoiceIsEditing, setSalesInvoiceIsEditing] = useState(false);
@@ -248,13 +275,46 @@ const App: React.FC = () => {
   const [treasuryTransferDraft, setTreasuryTransferDraft] = useState<any>(null);
   const [treasuryTransferIsEditing, setTreasuryTransferIsEditing] = useState(false);
 
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<MgmtUser | null>(null);
-  const [docToView, setDocToView] = useState<DocToView>(null);
-  const [preselectedCustomer, setPreselectedCustomer] = useState<number | null>(null);
-  const [preselectedSupplier, setPreselectedSupplier] = useState<number | null>(null);
-  const [preselectedSalesRep, setPreselectedSalesRep] = useState<PreselectedSalesRep>(null);
+  useEffect(() => {
+    if (defaultValues.githubRepo) {
+      checkGitHubUpdate(defaultValues.githubRepo, APP_VERSION).then(info => {
+        setLatestVersion(info.latestVersion);
+        setDownloadUrl(info.downloadUrl);
+        setReleaseNotes(info.releaseNotes);
+        if (info.hasUpdate) {
+          setUpdateAvailable(true);
+        } else {
+          setUpdateAvailable(false);
+        }
+      });
+    }
+  }, [defaultValues.githubRepo]);
+
+  // Heartbeat for online presence
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const updatePresence = () => {
+        setOnlineSessions(prev => {
+            const now = Date.now();
+            // Remove sessions older than 2 minutes and update current user
+            const activeSessions = prev.filter(s => now - s.lastActive < 120000 && s.userId !== currentUser.id);
+            return [...activeSessions, { id: currentUser.id, userId: currentUser.id, userName: currentUser.fullName, lastActive: now }];
+        });
+    };
+
+    // Initial update
+    updatePresence();
+
+    // Update every 30 seconds
+    const interval = setInterval(updatePresence, 30000);
+
+    // Cleanup on unmount
+    return () => {
+        clearInterval(interval);
+        setOnlineSessions(prev => prev.filter(s => s.userId !== currentUser.id));
+    };
+  }, [currentUser, setOnlineSessions]);
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
@@ -344,10 +404,12 @@ const App: React.FC = () => {
 
   const handleRestoreAppData = async (data: AppBackupData) => {
     try {
+        console.log("Starting restore with keys:", Object.keys(data));
         const keys = Object.keys(data);
         for (const key of keys) {
             const value = (data as any)[key];
             if (value !== undefined && value !== null) {
+                console.log(`Restoring ${key}...`);
                 if (Array.isArray(value)) {
                     await saveTableData(key, value);
                 } else {
@@ -355,6 +417,13 @@ const App: React.FC = () => {
                 }
             }
         }
+
+        // Check for HR data specifically to debug user issue
+        if (!data.employees) console.warn("Backup does not contain 'employees' key");
+        if (!data.departments) console.warn("Backup does not contain 'departments' key");
+        if (!data.attendanceRecords) console.warn("Backup does not contain 'attendanceRecords' key");
+        if (!data.salaryRecords) console.warn("Backup does not contain 'salaryRecords' key");
+
         showNotification('save');
         localStorage.setItem('pos_setup_complete', JSON.stringify(true));
         alert("تمت استعادة البيانات بنجاح. سيتم إعادة تشغيل البرنامج لتطبيق التغييرات.");
@@ -375,7 +444,7 @@ const App: React.FC = () => {
       case 'departmentManagement': return <DepartmentManagement departments={departments} setDepartments={setDepartments} />;
       case 'cloudSettings': return <CloudSettings firebaseConfig={firebaseConfig} setFirebaseConfig={setFirebaseConfig} showNotification={showNotification} />;
       case 'defaultValues': return <DefaultValuesComponent defaultValues={defaultValues} setDefaultValues={setDefaultValues} warehouses={warehouses} units={units} salesRepresentatives={salesRepresentatives} treasuries={treasuries} showNotification={showNotification} />;
-      case 'backupSettings': return <BackupSettings appData={{users, companyData, warehouses, units, items, treasuries, expenseCategories, expenses, customers, customerReceipts, salesRepresentatives, suppliers, supplierPayments, salesInvoices, salesReturns, purchaseInvoices, purchaseReturns, warehouseTransfers, treasuryTransfers, defaultValues, activeDiscounts, selectedDiscountItems, importCalculatorHistory}} onRestore={handleRestoreAppData} showNotification={showNotification} databases={databases} setDatabases={setDatabases} activeDatabaseId={activeDatabaseId} setActiveDatabaseId={activeDatabaseIdSet} allDataKeys={[]} />;
+      case 'backupSettings': return <BackupSettings appData={{users, companyData, warehouses, units, items, treasuries, expenseCategories, expenses, customers, customerReceipts, salesRepresentatives, suppliers, supplierPayments, salesInvoices, salesReturns, purchaseInvoices, purchaseReturns, warehouseTransfers, treasuryTransfers, defaultValues, activeDiscounts, selectedDiscountItems, importCalculatorHistory, employees, departments, attendanceRecords, salaryRecords}} onRestore={handleRestoreAppData} showNotification={showNotification} databases={databases} setDatabases={setDatabases} activeDatabaseId={activeDatabaseId} setActiveDatabaseId={activeDatabaseIdSet} allDataKeys={[]} />;
       case 'factoryReset': return <FactoryReset onConfirmReset={() => resetDB()} />;
       case 'settingsActivation': return <SettingsActivation licenseStatus={licenseStatus} />;
       case 'updateManagement': return <UpdateManagement licenseStatus={licenseStatus} latestVersion={latestVersion} downloadUrl={downloadUrl} releaseNotes={releaseNotes} />;
@@ -416,7 +485,7 @@ const App: React.FC = () => {
       case 'weeklyReport': return <WeeklyReport salesInvoices={salesInvoices} salesReturns={salesReturns} purchaseInvoices={purchaseInvoices} purchaseReturns={purchaseReturns} customerReceipts={customerReceipts} items={items} companyData={companyData} defaultValues={defaultValues} />;
       case 'itemSearch': return <ItemSearch items={items} warehouses={warehouses} />;
       case 'discountManagement': return <DiscountManagement items={items} companyData={companyData} activeDiscounts={activeDiscounts} setActiveDiscounts={setActiveDiscounts} showNotification={showNotification} selectedDiscountItems={selectedDiscountItems} setSelectedDiscountItems={setSelectedDiscountItems} />;
-      case 'salaries': return <Salaries employees={employees} attendanceRecords={attendanceRecords} salaryRecords={salaryRecords} setSalaryRecords={setSalaryRecords} currentUser={currentUser!} salesInvoices={salesInvoices} salesReturns={salesReturns} salesRepresentatives={salesRepresentatives} departments={departments} />;
+      case 'salaries': return <Salaries employees={employees} attendanceRecords={attendanceRecords} salaryRecords={salaryRecords} setSalaryRecords={setSalaryRecords} currentUser={currentUser!} salesInvoices={salesInvoices} salesReturns={salesReturns} salesRepresentatives={salesRepresentatives} departments={departments} expenses={expenses} expenseCategories={expenseCategories} />;
       case 'attendance': return <Attendance employees={employees} attendanceRecords={attendanceRecords} setAttendanceRecords={setAttendanceRecords} currentUser={currentUser!} departments={departments} />;
       case 'employeeManagement': return <EmployeeManagement employees={employees} setEmployees={setEmployees} currentUser={currentUser!} departments={departments} />;
       case 'appUnlock': return <AppUnlock users={users} setUsers={setUsers} showNotification={showNotification} />;
@@ -505,28 +574,30 @@ const App: React.FC = () => {
                     transparent={!!defaultValues.backgroundImage}
                 />
             </div>
-            <Chat currentUser={null} departments={departments} chatMessages={chatMessages} setChatMessages={setChatMessages} isLoginScreen={true} themeColor={defaultValues.chatThemeColor} />
+            <Chat currentUser={null} departments={departments} users={users} chatMessages={chatMessages} setChatMessages={setChatMessages} isLoginScreen={true} themeColor={defaultValues.chatThemeColor} />
         </div>
     );
   }
 
   return (
-    <div style={activeBackgroundStyle} className="h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300 relative overflow-hidden">
-      {activeBgImage && <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundColor: theme === 'dark' ? `rgba(17, 24, 39, ${activeBgOpacity})` : `rgba(255, 255, 255, ${activeBgOpacity})`, backdropFilter: `blur(${defaultValues.backgroundBlur !== undefined ? defaultValues.backgroundBlur : 2}px)` }}></div>}
+    <div style={activeBackgroundStyle} className="h-screen print:h-auto flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300 relative overflow-hidden print:overflow-visible">
+      {activeBgImage && <div className="absolute inset-0 pointer-events-none z-0 print:hidden" style={{ backgroundColor: theme === 'dark' ? `rgba(17, 24, 39, ${activeBgOpacity})` : `rgba(255, 255, 255, ${activeBgOpacity})`, backdropFilter: `blur(${defaultValues.backgroundBlur !== undefined ? defaultValues.backgroundBlur : 2}px)` }}></div>}
       
-      <div className="relative z-10 flex flex-col h-full">
+      <div className="relative z-10 flex flex-col h-full print:h-auto print:overflow-visible">
         {licenseStatus && !licenseStatus.isActivated && (
             <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-black flex justify-between items-center px-4 py-1 z-50 text-sm font-bold print:hidden">
                 <span>نسخة تجريبية - متبقي {licenseStatus.daysRemaining} يوم</span>
                 <span>© {new Date().getFullYear()} جميع الحقوق محفوظة لـ ETQAN Solutions</span>
             </div>
         )}
-        <TopNav onNavigate={(view) => { if(view === 'settingsActivation') setShowManualActivation(true); else setCurrentView(view); }} currentUser={currentUser} licenseStatus={licenseStatus} user={currentUser.fullName} onLogout={handleLogout} theme={theme} onThemeChange={setTheme} currentViewLabel={currentViewLabel} isCloudConnected={isCloudConnected} updateAvailable={updateAvailable} firebaseConfig={firebaseConfig} isDBReady={isDBReady} />
-        <main className="flex-1 p-6 overflow-y-auto">
+        <div className="print:hidden">
+            <TopNav onNavigate={(view) => { if(view === 'settingsActivation') setShowManualActivation(true); else setCurrentView(view); }} currentUser={currentUser} licenseStatus={licenseStatus} user={currentUser.fullName} onLogout={handleLogout} theme={theme} onThemeChange={setTheme} currentViewLabel={currentViewLabel} isCloudConnected={isCloudConnected} updateAvailable={updateAvailable} firebaseConfig={firebaseConfig} isDBReady={isDBReady} />
+        </div>
+        <main className="flex-1 p-6 overflow-y-auto print:overflow-visible print:p-0">
             {notification && <ActionFeedback type={notification} />} 
             {renderCurrentView()}
         </main>
-        <Chat currentUser={currentUser!} departments={departments} chatMessages={chatMessages} setChatMessages={setChatMessages} themeColor={defaultValues.chatThemeColor} />
+        <Chat currentUser={currentUser!} departments={departments} users={users} onlineSessions={onlineSessions} chatMessages={chatMessages} setChatMessages={setChatMessages} themeColor={defaultValues.chatThemeColor} />
         {isLogoutModalOpen && (
             <Modal show={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} title="تنبيه قبل الخروج">
                 <div className="p-6 text-center">

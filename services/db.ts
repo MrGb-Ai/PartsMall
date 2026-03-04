@@ -1,6 +1,6 @@
 
 const DB_NAME = 'pos_native_db';
-const DB_VERSION = 10; // تم التحديث لإضافة salaryRecords
+const DB_VERSION = 11; // تم التحديث لإضافة onlineSessions
 
 const STORE_NAMES = [
     'users', 'companyData', 'warehouses', 'units', 'items', 'treasuries',
@@ -9,7 +9,7 @@ const STORE_NAMES = [
     'heldInvoices', 'heldPurchaseInvoices', 'salesReturns', 'purchaseInvoices', 'purchaseReturns',
     'warehouseTransfers', 'treasuryTransfers', 'defaultValues',
     'activeDiscounts', 'selectedDiscountItems', 'systemSettings', 'databases', 'importCalculatorHistory',
-    'employees', 'departments', 'chatMessages', 'attendanceRecords', 'salaryRecords'
+    'employees', 'departments', 'chatMessages', 'attendanceRecords', 'salaryRecords', 'onlineSessions'
 ];
 
 let dbPromise: Promise<IDBDatabase> | null = null;

@@ -173,7 +173,14 @@ const ExpenseManagement: React.FC<ExpenseManagementProps> = ({
     const suggestedCategories = React.useMemo(() => {
         const query = categorySearchQuery.trim();
         if (!query) return expenseCategories;
-        return expenseCategories.filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.code.includes(query));
+        return expenseCategories.filter(c => {
+            const isNumber = /^\d+$/.test(query);
+            if (isNumber) {
+                // Strict match for code or ID when input is a number
+                return c.code === query || c.id.toString() === query;
+            }
+            return c.name && c.name.toLowerCase().includes(query.toLowerCase());
+        });
     }, [categorySearchQuery, expenseCategories]);
 
     const handleCategorySelect = (category: ExpenseCategory) => { 
@@ -256,7 +263,7 @@ const ExpenseManagement: React.FC<ExpenseManagementProps> = ({
                             </div>
                             {isCategorySuggestionsOpen && suggestedCategories.length > 0 && (
                                 <ul className="absolute z-50 w-full bg-white dark:bg-gray-800 border rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg top-full">
-                                    {suggestedCategories.map(cat => <li key={cat.id} onMouseDown={() => handleCategorySelect(cat)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer font-bold border-b last:border-0 dark:text-white">{cat.name}</li>)}
+                                    {suggestedCategories.map(cat => <li key={cat.id} onMouseDown={() => handleCategorySelect(cat)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer font-bold border-b last:border-0 dark:text-white flex justify-between"><span>{cat.name}</span><span className="text-gray-400 text-sm">{cat.code}</span></li>)}
                                 </ul>
                             )}
                         </div>
